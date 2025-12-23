@@ -273,10 +273,30 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
               onChanged: (_) => _calculate(),
             ),
             const SizedBox(height: 20),
-            _buildResultRow('Total Cost:', _totalCost, Colors.red),
-            _buildResultRow('Total Revenue:', _totalRevenue, Colors.blue),
+            const SizedBox(height: 20),
+            // Selling Price (formerly Revenue)
+            _buildResultRow('Selling Price:', _totalRevenue, Colors.blue, isBold: true),
+            
+            // Profit
+            _buildResultRow('Profit:', _profit, Colors.green, isBold: true, fontSize: 20),
+            
             const Divider(),
-            _buildResultRow('Profit:', _profit, Colors.green, isBold: true),
+            
+            // Total Cost (Small, Bottom Left)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  'Total Cost: LKR ${_totalCost.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -293,19 +313,19 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
     );
   }
 
-  Widget _buildResultRow(String label, double value, Color color, {bool isBold = false}) {
+  Widget _buildResultRow(String label, double value, Color color, {bool isBold = false, double fontSize = 14}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+          Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal, fontSize: isBold ? 16 : 14)),
           Text(
             'LKR ${value.toStringAsFixed(2)}',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
-              fontSize: isBold ? 18 : 14,
+              fontSize: isBold ? (fontSize > 14 ? fontSize : 18) : 14,
             ),
           ),
         ],
