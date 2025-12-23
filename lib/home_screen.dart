@@ -163,7 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  final Map<String, Map<String, double>> _itemDefaults = {};
 
   // Show calculator.
   void _showCalculator(BuildContext context, String itemName) {
