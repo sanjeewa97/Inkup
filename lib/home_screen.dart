@@ -12,7 +12,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // This is the main screen where we layout the grid and nav bar.
+    // Main layout.
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: GridView.count(
-                  // We're going with 4 columns to fit everything nicely on one screen.
+                  // 4 column grid.
                   crossAxisCount: 4, 
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 12,
@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Pop up that calculator so the boss can check the profit.
+  // Show calculator.
   void _showCalculator(BuildContext context, String itemName) {
     showDialog(
       context: context,
