@@ -263,13 +263,13 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
             TextField(
               controller: _costController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Unit Cost'),
+              decoration: const InputDecoration(labelText: 'Unit Cost (LKR)'),
               onChanged: (_) => _calculate(),
             ),
             TextField(
               controller: _priceController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Unit Selling Price'),
+              decoration: const InputDecoration(labelText: 'Unit Selling Price (LKR)'),
               onChanged: (_) => _calculate(),
             ),
             const SizedBox(height: 20),
@@ -301,7 +301,7 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
         children: [
           Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
           Text(
-            value.toStringAsFixed(2),
+            'LKR ${value.toStringAsFixed(2)}',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
