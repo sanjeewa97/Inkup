@@ -274,19 +274,14 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
             ),
             const SizedBox(height: 20),
             const SizedBox(height: 20),
-            // Selling Price (formerly Revenue)
-            _buildResultRow('Selling Price:', _totalRevenue, Colors.blue, isBold: true),
+            // Selling Price (Restored to original style)
+            _buildResultRow('Selling Price:', _totalRevenue, Colors.blue),
             
-            // Profit
-            _buildResultRow('Profit:', _profit, Colors.green, isBold: true, fontSize: 20),
-            
-            const Divider(),
-            
-            // Total Cost (Small, Bottom Left)
+            // Total Cost (Low profile)
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Text(
                   'Total Cost: LKR ${_totalCost.toStringAsFixed(2)}',
                   style: const TextStyle(
@@ -297,6 +292,11 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
                 ),
               ),
             ),
+
+            const Divider(),
+            
+            // Profit (Bottom, Big)
+            _buildResultRow('Profit:', _profit, Colors.green, isBold: true, fontSize: 22),
           ],
         ),
       ),
