@@ -122,11 +122,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  final Map<String, Map<String, double>> _itemDefaults = {};
+
   // Show calculator.
   void _showCalculator(BuildContext context, String itemName) {
+    final defaults = _itemDefaults[itemName] ?? {'cost': 0.0, 'price': 0.0};
     showDialog(
       context: context,
-      builder: (context) => CalculatorDialog(itemName: itemName),
+      builder: (context) => CalculatorDialog(
+        itemName: itemName,
+        initialCost: defaults['cost']!,
+        initialPrice: defaults['price']!,
+        onSaveDefaults: (cost, price) {
+          setState(() {
+            _itemDefaults[itemName] = {'cost': cost, 'price': price};
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Defaults saved for $itemName')),
+          );
+        },
+      ),
     );
   }
 
@@ -173,7 +188,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class CalculatorDialog extends StatefulWidget {
   final String itemName;
-  const CalculatorDialog({super.key, required this.itemName});
+  final double initialCost;
+  final double initialPrice;
+  final Function(double, double) onSaveDefaults;
+
+  const CalculatorDialog({
+    super.key,
+    required this.itemName,
+    required this.initialCost,
+    required this.initialPrice,
+    required this.onSaveDefaults,
+  });
 
   @override
   State<CalculatorDialog> createState() => _CalculatorDialogState();
@@ -181,12 +206,27 @@ class CalculatorDialog extends StatefulWidget {
 
 class _CalculatorDialogState extends State<CalculatorDialog> {
   final _qtyController = TextEditingController();
-  final _costController = TextEditingController();
-  final _priceController = TextEditingController();
+  late TextEditingController _costController;
+  late TextEditingController _priceController;
 
   double _totalCost = 0;
   double _totalRevenue = 0;
   double _profit = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _costController = TextEditingController(text: widget.initialCost > 0 ? widget.initialCost.toString() : '');
+    _priceController = TextEditingController(text: widget.initialPrice > 0 ? widget.initialPrice.toString() : '');
+  }
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    _costController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
 
   void _calculate() {
     final qty = double.tryParse(_qtyController.text) ?? 0;
@@ -198,6 +238,12 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
       _totalRevenue = qty * unitPrice;
       _profit = _totalRevenue - _totalCost;
     });
+  }
+
+  void _saveDefaults() {
+    final unitCost = double.tryParse(_costController.text) ?? 0;
+    final unitPrice = double.tryParse(_priceController.text) ?? 0;
+    widget.onSaveDefaults(unitCost, unitPrice);
   }
 
   @override
@@ -235,6 +281,10 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
         ),
       ),
       actions: [
+        TextButton(
+          onPressed: _saveDefaults,
+          child: const Text('Save Defaults'),
+        ),
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Close'),
