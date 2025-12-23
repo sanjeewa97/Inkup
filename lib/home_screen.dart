@@ -14,20 +14,34 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     // Main layout.
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA), // Modern off-white background
       body: SafeArea(
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24.0),
-              child: Text(
-                'Printing Shop Name',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF333333),
-                  letterSpacing: 0.5,
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Welcome back,',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Printing Shop Name',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold, // Bolder font
+                      color: Color(0xFF1A1A1A), // Darker text for contrast
+                      letterSpacing: -0.5, // Modern tight spacing
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -35,10 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: GridView.count(
                   // 4 column grid.
-                  crossAxisCount: 4, 
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.75, 
+                  crossAxisCount: 2, // Changed to 2 columns for better card look
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.1, // Adjusted for card ratio
                   children: [
                     MenuCard(
                       icon: Icons.receipt_long,
@@ -249,27 +263,46 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Calculate: ${widget.itemName}', style: const TextStyle(fontSize: 18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)), // Rounded dialog
+      title: Text('Calculate: ${widget.itemName}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 10),
             TextField(
               controller: _qtyController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Quantity'),
+              decoration: const InputDecoration(
+                labelText: 'Quantity',
+                filled: true,
+                fillColor: Color(0xFFF0F2F5),
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide.none),
+              ),
               onChanged: (_) => _calculate(),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: _costController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Unit Cost (Rs)'),
+              decoration: const InputDecoration(
+                labelText: 'Unit Cost (Rs)',
+                filled: true,
+                fillColor: Color(0xFFF0F2F5),
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide.none),
+              ),
               onChanged: (_) => _calculate(),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: _priceController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Unit Selling Price (Rs)'),
+              decoration: const InputDecoration(
+                labelText: 'Unit Selling Price (Rs)',
+                filled: true,
+                 fillColor: Color(0xFFF0F2F5),
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide.none),
+              ),
               onChanged: (_) => _calculate(),
             ),
             const SizedBox(height: 20),
@@ -293,7 +326,7 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
               ),
             ),
 
-            // Profit (Small, like Cost)
+            // Profit
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
@@ -361,35 +394,47 @@ class MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Icon(icon, size: 28, color: color),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF444444),
-              height: 1.1,
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle, // Circular icon background
+              ),
+              child: Icon(icon, size: 28, color: color),
             ),
-            maxLines: 2, 
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12, // Slightly larger font
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF333333),
+              ),
+              maxLines: 2, 
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
