@@ -263,13 +263,13 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
             TextField(
               controller: _costController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Unit Cost (LKR)'),
+              decoration: const InputDecoration(labelText: 'Unit Cost (Rs)'),
               onChanged: (_) => _calculate(),
             ),
             TextField(
               controller: _priceController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Unit Selling Price (LKR)'),
+              decoration: const InputDecoration(labelText: 'Unit Selling Price (Rs)'),
               onChanged: (_) => _calculate(),
             ),
             const SizedBox(height: 20),
@@ -283,7 +283,7 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Text(
-                  'Total Cost: LKR ${_totalCost.toStringAsFixed(2)}',
+                  'Total Cost: Rs ${_totalCost.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
@@ -299,7 +299,7 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Text(
-                  'Profit: LKR ${_profit.toStringAsFixed(2)}',
+                  'Profit: Rs ${_profit.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.green, // Kept green for differentiation, but small
@@ -332,7 +332,7 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
         children: [
           Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal, fontSize: isBold ? 16 : 14)),
           Text(
-            'LKR ${value.toStringAsFixed(2)}',
+            'Rs ${value.toStringAsFixed(2)}',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
