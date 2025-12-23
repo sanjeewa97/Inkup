@@ -263,8 +263,8 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
   @override
   void initState() {
     super.initState();
-    _costController = TextEditingController(text: widget.initialCost > 0 ? widget.initialCost.toString() : '');
-    _priceController = TextEditingController(text: widget.initialPrice > 0 ? widget.initialPrice.toString() : '');
+    _costController = TextEditingController(text: widget.initialCost > 0 ? widget.initialCost.toStringAsFixed(2) : '');
+    _priceController = TextEditingController(text: widget.initialPrice > 0 ? widget.initialPrice.toStringAsFixed(2) : '');
   }
 
   @override
