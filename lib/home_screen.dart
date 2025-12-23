@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,12 +10,38 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final Map<String, Map<String, double>> _itemDefaults = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaults();
+  }
+
+  Future<void> _loadDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      
+      const items = [
+        'Bill Book', 'Pad Book', 'Poly Bag Print', 'Photo Frame',
+        'Customize Frame', 'Name Board', 'Light Board', 'Stand Board'
+      ];
+      
+      for (var item in items) {
+        final cost = prefs.getDouble('cost_$item') ?? 0.0;
+        final price = prefs.getDouble('price_$item') ?? 0.0;
+        if (cost > 0 || price > 0) {
+          _itemDefaults[item] = {'cost': cost, 'price': price};
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     // Main layout.
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Modern off-white background
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: Column(
           children: [
@@ -36,9 +63,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Printing Shop Name',
                     style: TextStyle(
                       fontSize: 26,
-                      fontWeight: FontWeight.bold, // Bolder font
-                      color: Color(0xFF1A1A1A), // Darker text for contrast
-                      letterSpacing: -0.5, // Modern tight spacing
+                      fontWeight: FontWeight.bold, 
+                      color: Color(0xFF1A1A1A), 
+                      letterSpacing: -0.5, 
                     ),
                   ),
                 ],
@@ -50,9 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: GridView.count(
                   // 3 column grid.
                   crossAxisCount: 3, 
-                  crossAxisSpacing: 12, // Slightly tighter spacing
+                  crossAxisSpacing: 12, 
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.9, // Adjusted for 3 columns (taller cards)
+                  childAspectRatio: 0.9, 
                   children: [
                     MenuCard(
                       icon: Icons.receipt_long,
@@ -147,13 +174,20 @@ class _HomeScreenState extends State<HomeScreen> {
         itemName: itemName,
         initialCost: defaults['cost']!,
         initialPrice: defaults['price']!,
-        onSaveDefaults: (cost, price) {
+        onSaveDefaults: (cost, price) async {
           setState(() {
             _itemDefaults[itemName] = {'cost': cost, 'price': price};
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Defaults saved for $itemName')),
-          );
+          
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setDouble('cost_$itemName', cost);
+          await prefs.setDouble('price_$itemName', price);
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Defaults saved for $itemName')),
+            );
+          }
         },
       ),
     );
