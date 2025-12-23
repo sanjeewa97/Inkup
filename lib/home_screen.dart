@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -48,25 +50,41 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Welcome back,',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Printing Shop Name',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold, 
-                      color: Color(0xFF1A1A1A), 
-                      letterSpacing: -0.5, 
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome back,',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Printing Shop Name',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold, 
+                              color: Color(0xFF1A1A1A), 
+                              letterSpacing: -0.5, 
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.redAccent),
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          await GoogleSignIn().signOut();
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -124,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => _showCalculator(context, 'Light Board'),
                     ),
                     MenuCard(
-                      icon: Icons.table_bar,
+                      icon: Icons.signpost_outlined,
                       label: 'Stand Board',
                       color: Colors.blueGrey,
                       onTap: () => _showCalculator(context, 'Stand Board'),
