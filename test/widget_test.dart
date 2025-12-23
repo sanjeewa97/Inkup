@@ -4,16 +4,16 @@ import 'package:inkup/main.dart';
 
 void main() {
   testWidgets('Home screen smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+    // Kick off the app and wait for it to settle.
     await tester.pumpWidget(const MyApp());
 
-    // Verify that the title is displayed.
+    // Check if the shop name showed up.
     expect(find.text('Printing Shop Name'), findsOneWidget);
 
-    // Verify that "Bill Book" menu item is present.
+    // Make sure the Bill Book option is on the screen.
     expect(find.text('Bill Book'), findsOneWidget);
 
-    // Verify that bottom nav "Home" is present.
+    // Confirm the Home tab is sitting at the bottom.
     expect(find.text('Home'), findsOneWidget);
   });
 }
