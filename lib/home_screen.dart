@@ -48,11 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: GridView.count(
-                  // 4 column grid.
-                  crossAxisCount: 2, // Changed to 2 columns for better card look
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.1, // Adjusted for card ratio
+                  // 3 column grid.
+                  crossAxisCount: 3, 
+                  crossAxisSpacing: 12, // Slightly tighter spacing
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.9, // Adjusted for 3 columns (taller cards)
                   children: [
                     MenuCard(
                       icon: Icons.receipt_long,
@@ -263,7 +263,7 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)), // Rounded dialog
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)), 
       title: Text('Calculate: ${widget.itemName}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
         child: Column(
@@ -335,7 +335,7 @@ class _CalculatorDialogState extends State<CalculatorDialog> {
                   'Profit: Rs ${_profit.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Colors.green, // Kept green for differentiation, but small
+                    color: Colors.green, 
                     fontWeight: FontWeight.w500,
                   ),
                 ),
