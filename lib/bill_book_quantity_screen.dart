@@ -45,22 +45,22 @@ class _BillBookQuantityScreenState extends State<BillBookQuantityScreen> {
   int _getDefaultQuantity(int multiple) {
     switch (multiple) {
       case 1:
-        return 10;
+        return 1;
       case 2:
-        return 10; // 5 x 2
+        return 2;
       case 3:
-        return 12; // 4 x 3
+        return 3;
       case 4:
-        return 20; // 5 x 4
+        return 4;
       default:
-        return multiple * 5;
+        return multiple;
     }
   }
 
   List<int> _getQuickSelectOptions(int multiple) {
     switch (multiple) {
       case 1:
-        return [5, 10, 20, 50, 100, 200];
+        return [1, 5, 10, 20, 50, 100];
       case 2:
         return [2, 4, 10, 20, 50, 100];
       case 3:

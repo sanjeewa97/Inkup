@@ -177,15 +177,15 @@ class _BillBookScreenState extends State<BillBookScreen> {
   int _getDefaultQuantity(int multiple) {
     switch (multiple) {
       case 1:
-        return 10;
+        return 1;
       case 2:
-        return 10;
+        return 2;
       case 3:
-        return 12;
+        return 3;
       case 4:
-        return 20;
+        return 4;
       default:
-        return multiple * 5;
+        return multiple;
     }
   }
 

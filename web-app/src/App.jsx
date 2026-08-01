@@ -71,9 +71,9 @@ const PRINTING_METHODS = [
 
 const DEFAULT_PAPERS = [
   { name: 'NCR Carbonized Paper', tag: 'CB / CFB / CF', desc: 'Carbonized set' },
-  { name: 'Bank Paper 60 GSM', tag: 'Standard Sheet', desc: 'Standard ledger sheet' },
-  { name: 'Bond Paper 80 GSM', tag: 'Premium Heavy', desc: 'High-end letterhead feel' },
-  { name: 'Normal Print 50 GSM', tag: 'Economical', desc: 'Quick receipt sheet' },
+  { name: 'Paper bank 60 GSM', tag: 'Standard Sheet', desc: 'Standard ledger sheet' },
+  { name: 'Bond paper 80 GSM', tag: 'Premium Heavy', desc: 'High-end letterhead feel' },
+  { name: 'Normal print 50 GSM', tag: 'Economical', desc: 'Quick receipt sheet' },
 ];
 
 const OFFSET_COLOR_OPTIONS = [
@@ -102,7 +102,7 @@ export default function App() {
   const [customSizes, setCustomSizes] = useState([]);
   const [selectedSize, setSelectedSize] = useState('A4 size');
   const [printingMethod, setPrintingMethod] = useState('Offset Printing'); // 'Offset Printing' or 'Duplo Printing'
-  const [quantity, setQuantity] = useState(10);
+  const [quantity, setQuantity] = useState(1);
   const [pageQuantity, setPageQuantity] = useState(50);
 
   // Step 4: Paper Layers & Colors State (Top, Mid 1, Mid 2, Mid 3, Bottom)
@@ -122,11 +122,34 @@ export default function App() {
   const [notification, setNotification] = useState(null);
 
   // Step 4: Advanced Pricing & Cost Settings (9 Options Requested by User)
+  const DEFAULT_PAPER_PRICES = {
+    'NCR top': 25.50,
+    'NCR mid': 25.50,
+    'NCR bot': 25.50,
+    'Paper bank 60 GSM': 16.00,
+    'Bond paper 80 GSM': 20.00,
+    'Normal print 50 GSM': 15.20,
+    'NCR Carbonized Paper': 25.50,
+    'Bank Paper 60 GSM': 16.00,
+    'Bank Paper': 16.00,
+    'Bond Paper 80 GSM': 20.00,
+    'Normal Print 50 GSM': 15.20,
+    'Choose paper type': 0.00,
+  };
+
   const getInitialAdvancedSettings = () => {
     const saved = localStorage.getItem('custom_bill_book_advanced_settings');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (!parsed.paperPrices) parsed.paperPrices = {};
+        for (const [k, v] of Object.entries(DEFAULT_PAPER_PRICES)) {
+          if (parsed.paperPrices[k] === undefined || (k.startsWith('NCR') && parsed.paperPrices[k] === 3.50)) {
+            parsed.paperPrices[k] = v;
+          }
+        }
+        if (parsed.designingCharge === undefined) parsed.designingCharge = 500;
+        return parsed;
       } catch (e) {
         console.error('Error loading saved advanced settings:', e);
       }
@@ -134,30 +157,20 @@ export default function App() {
     return {
       profitPercentage: 40,
       wastagePercentage: 15,
-      paperPrices: {
-        'NCR Carbonized Paper': 3.50,
-        'Bank Paper': 3.00,
-        'Art Paper 120g': 5.00,
-        'Art Paper 150g': 6.50,
-        'Art Board 230g': 10.00,
-        'Art Board 300g': 12.00,
-        'Bond Paper 80g': 4.00,
-        'Ledger Paper': 4.50,
-        'Manifold Paper': 2.50,
-        'Choose paper type': 3.00,
-      },
+      paperPrices: { ...DEFAULT_PAPER_PRICES },
       platePrice: 1300,
       impressionCost: 1000,
       duploCost: 3.5,
       bindingChargesPerBook: 80,
       transportCharges: 500,
+      designingCharge: 500,
       additionalChargeName: '',
       additionalChargeAmount: 0.00,
     };
   };
 
   const [advancedSettings, setAdvancedSettings] = useState(getInitialAdvancedSettings);
-  const [selectedPaperForPrice, setSelectedPaperForPrice] = useState('NCR Carbonized Paper');
+  const [selectedPaperForPrice, setSelectedPaperForPrice] = useState('NCR top');
   const [showAdvancedModal, setShowAdvancedModal] = useState(false);
 
   // Global layout selection for Offset Printing: 'A4' or '2up' — applies to ALL layers
@@ -261,11 +274,11 @@ export default function App() {
 
   const getDefaultQuantity = (multiple) => {
     switch (multiple) {
-      case 1: return 10;
-      case 2: return 10;
-      case 3: return 12;
-      case 4: return 20;
-      default: return multiple * 5;
+      case 1: return 1;
+      case 2: return 2;
+      case 3: return 3;
+      case 4: return 4;
+      default: return multiple;
     }
   };
 
@@ -297,7 +310,7 @@ export default function App() {
   const handleResetAll = () => {
     setSelectedSize('A4 size');
     setPrintingMethod('Offset Printing');
-    setQuantity(10);
+    setQuantity(1);
     setPageQuantity(50);
     setPaperLayers({
       top: { enabled: true, paper: 'NCR Carbonized Paper', color: 1 },
@@ -435,11 +448,24 @@ export default function App() {
     ...customPapers
   ];
 
+  const pricingPaperOptions = [
+    'NCR top',
+    'NCR mid',
+    'NCR bot',
+    ...DEFAULT_PAPERS.map(p => p.name).filter(name => name !== 'NCR Carbonized Paper'),
+    ...customPapers
+  ];
+
   const requiredMultiple = getRequiredMultiple(selectedSize);
   const quantityOptions = getQuantityDropdownOptions(requiredMultiple);
   const finalQuantityOptions = quantityOptions.includes(quantity)
     ? quantityOptions
     : [...quantityOptions, quantity].sort((a, b) => a - b);
+
+  const formatCurrency = (amount) => {
+    const num = Number(amount) || 0;
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   // Calculate numbers for dialog
   const numQty = parseFloat(calcQty) || 0;
@@ -623,23 +649,36 @@ export default function App() {
             const totalPagesPerBook = enabledLayersList.length * pageQuantity;
             const totalPrintedSheets = totalPagesPerBook * quantity;
 
-            // 1) Paper Cost (based on selected paper types for enabled layers)
-            const costPerSetPaper = enabledLayersList.reduce((sum, layer) => {
+            // 1) Paper Cost = (paper price * full sheet) + wastage allowance
+            const totalRawPaperCost = enabledLayersList.reduce((sum, layer) => {
               const pName = paperLayers[layer.key].paper;
-              const unitPrice = advancedSettings.paperPrices[pName] !== undefined
-                ? advancedSettings.paperPrices[pName]
-                : 3.50;
-              return sum + unitPrice;
+              let pricingKey = pName;
+              if (pName === 'NCR Carbonized Paper') {
+                if (layer.key === 'top') pricingKey = 'NCR top';
+                else if (layer.key === 'bottom') pricingKey = 'NCR bot';
+                else pricingKey = 'NCR mid';
+              }
+              const unitPrice = advancedSettings.paperPrices[pricingKey] !== undefined
+                ? advancedSettings.paperPrices[pricingKey]
+                : (advancedSettings.paperPrices[pName] !== undefined
+                  ? advancedSettings.paperPrices[pName]
+                  : (DEFAULT_PAPER_PRICES[pricingKey] !== undefined ? DEFAULT_PAPER_PRICES[pricingKey] : 25.50));
+              const layerTotalSheets = quantity * pageQuantity;
+              const layerFullSheets = Math.ceil(layerTotalSheets / 8);
+              return sum + (unitPrice * layerFullSheets);
             }, 0);
-            const totalRawPaperCost = quantity * pageQuantity * costPerSetPaper;
             const totalWastageCost = totalRawPaperCost * ((Number(advancedSettings.wastagePercentage) || 0) / 100);
             const totalPaperCostWithWastage = totalRawPaperCost + totalWastageCost;
             const basePaperCostPerSheet = totalPrintedSheets > 0 ? totalPaperCostWithWastage / totalPrintedSheets : 0;
 
             // 2) Printing / Impression / Duplo Cost
+            const duploPrintedSheets = enabledLayersList.reduce((sum, layer) => {
+              const isPrinted = paperLayers[layer.key].color > 0;
+              return sum + (isPrinted ? (quantity * pageQuantity) : 0);
+            }, 0);
             const totalPrintingCost = printingMethod === 'Offset Printing'
               ? Math.max(1, Math.ceil(totalPrintedSheets / 1000)) * (Number(advancedSettings.impressionCost) || 0)
-              : totalPrintedSheets * (Number(advancedSettings.duploCost) || 0);
+              : duploPrintedSheets * (Number(advancedSettings.duploCost) || 0);
             const basePrintCostPerSheet = totalPrintedSheets > 0 ? totalPrintingCost / totalPrintedSheets : 0;
 
             // 3) Plate Price
@@ -647,13 +686,16 @@ export default function App() {
               ? (Number(advancedSettings.platePrice) || 0)
               : 0;
 
-            // 4) Binding, Transport, Additional
+            // 4) Binding, Transport, Designing, Additional
             const totalBindingCost = quantity * (Number(advancedSettings.bindingChargesPerBook) || 0);
-            const totalTransportCost = Number(advancedSettings.transportCharges) || 0;
+            const totalTransportCost = printingMethod === 'Offset Printing'
+              ? (Number(advancedSettings.transportCharges) || 0)
+              : 0;
+            const totalDesigningCost = advancedSettings.designingCharge !== undefined ? (Number(advancedSettings.designingCharge) || 0) : 500;
             const totalAdditionalCost = Number(advancedSettings.additionalChargeAmount) || 0;
 
             // Subtotal (Base Production Cost) and Profit
-            const totalBaseCost = totalPaperCostWithWastage + totalPrintingCost + totalPlateCost + totalBindingCost + totalTransportCost + totalAdditionalCost;
+            const totalBaseCost = totalPaperCostWithWastage + totalPrintingCost + totalPlateCost + totalBindingCost + totalTransportCost + totalDesigningCost + totalAdditionalCost;
             const totalProfitAmount = totalBaseCost * ((Number(advancedSettings.profitPercentage) || 0) / 100);
             const estimatedTotal = totalBaseCost + totalProfitAmount;
 
@@ -888,9 +930,7 @@ export default function App() {
                   className="paper-list-header-row"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: printingMethod === 'Offset Printing'
-                      ? 'minmax(130px, 1fr) 1fr 110px 72px 72px'
-                      : 'minmax(150px, 1fr) 1fr 125px',
+                    gridTemplateColumns: 'minmax(130px, 1fr) 1fr 110px 72px 72px',
                     alignItems: 'center',
                     gap: '0.5rem'
                   }}
@@ -898,12 +938,10 @@ export default function App() {
                   <span style={{ textAlign: 'left' }}>Sheet Layer</span>
                   <span style={{ textAlign: 'center' }}>Paper Type</span>
                   <span style={{ textAlign: 'right' }}>Printing Color</span>
-                  {printingMethod === 'Offset Printing' && (
-                    <>
-                      <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#0369a1', fontWeight: 800 }}>A4/2up</span>
-                      <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#7e22ce', fontWeight: 800 }}>Full Sheet</span>
-                    </>
-                  )}
+                  <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#0369a1', fontWeight: 800 }}>
+                    {printingMethod === 'Offset Printing' ? 'A4/2up' : 'A4 Sheet'}
+                  </span>
+                  <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#7e22ce', fontWeight: 800 }}>Full Sheet</span>
                 </div>
 
                 {layersConfig.map((layer) => {
@@ -938,9 +976,7 @@ export default function App() {
                       className="paper-list-row"
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: printingMethod === 'Offset Printing'
-                          ? 'minmax(130px, 1fr) 1fr 110px 72px 72px'
-                          : 'minmax(150px, 1fr) 1fr 125px',
+                        gridTemplateColumns: 'minmax(130px, 1fr) 1fr 110px 72px 72px',
                         alignItems: 'center',
                         gap: '0.5rem',
                         opacity: !isEnabled ? 0.65 : 1,
@@ -1025,7 +1061,8 @@ export default function App() {
                               transition: 'all 0.15s ease'
                             }}
                           >
-                            <span>+ Include {layer.title}</span>
+                            <PlusCircle size={14} />
+                            <span>+ Include Layer</span>
                           </button>
                         ) : (
                           <>
@@ -1076,59 +1113,77 @@ export default function App() {
                         )}
                       </div>
 
-                      {/* A4/2up Column & Full Sheet Column — AFTER Printing Color (Offset only) */}
-                      {printingMethod === 'Offset Printing' && (
-                        <>
-                          {/* A4/2up: Dropdown to select layout, count shown below */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.15rem' }}>
-                            {isEnabled ? (
-                              <>
-                                <select
-                                  value={offsetLayout}
-                                  onChange={(e) => setOffsetLayout(e.target.value)}
-                                  style={{
-                                    fontSize: '0.68rem',
-                                    fontWeight: 700,
-                                    color: '#0369a1',
-                                    background: '#eff6ff',
-                                    border: '1.5px solid #bfdbfe',
-                                    borderRadius: '6px',
-                                    padding: '0.15rem 0.25rem',
-                                    cursor: 'pointer',
-                                    width: '58px',
-                                    textAlign: 'center',
-                                    outline: 'none'
-                                  }}
-                                >
-                                  <option value="A4">A4</option>
-                                  <option value="2up">2up</option>
-                                </select>
-                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerA4TwoUp.toLocaleString()}</span>
-                              </>
-                            ) : <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>}
-                          </div>
+                      {/* A4/2up Column & Full Sheet Column */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.15rem' }}>
+                        {isEnabled ? (
+                          printingMethod === 'Offset Printing' ? (
+                            <>
+                              <select
+                                value={offsetLayout}
+                                onChange={(e) => setOffsetLayout(e.target.value)}
+                                style={{
+                                  fontSize: '0.68rem',
+                                  fontWeight: 700,
+                                  color: '#0369a1',
+                                  background: '#eff6ff',
+                                  border: '1.5px solid #bfdbfe',
+                                  borderRadius: '6px',
+                                  padding: '0.15rem 0.25rem',
+                                  cursor: 'pointer',
+                                  width: '58px',
+                                  textAlign: 'center',
+                                  outline: 'none'
+                                }}
+                              >
+                                <option value="A4">A4</option>
+                                <option value="2up">2up</option>
+                              </select>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerA4TwoUp.toLocaleString()}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{
+                                fontSize: '0.68rem',
+                                fontWeight: 700,
+                                color: '#0369a1',
+                                background: '#eff6ff',
+                                border: '1.5px solid #bfdbfe',
+                                borderRadius: '6px',
+                                padding: '0.15rem 0.45rem',
+                                display: 'inline-block'
+                              }}>
+                                A4
+                              </span>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerTotalSheets.toLocaleString()}</span>
+                            </>
+                          )
+                        ) : (
+                          <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>
+                        )}
+                      </div>
 
-                          {/* Full Sheet: Calculated value */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.1rem' }}>
-                            {isEnabled ? (
-                              <>
-                                <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#7e22ce' }}>{layerFullSheets.toLocaleString()}</span>
-                                <span style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 600 }}>full sh.</span>
-                              </>
-                            ) : <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>}
-                          </div>
-                        </>
-                      )}
+                      {/* Full Sheet: Calculated value */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.1rem' }}>
+                        {isEnabled ? (
+                          <>
+                            <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#7e22ce' }}>{layerFullSheets.toLocaleString()}</span>
+                            <span style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 600 }}>full sh.</span>
+                          </>
+                        ) : (
+                          <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
 
-                {/* Offset Printing: Paper Type Totals Summary */}
-                {printingMethod === 'Offset Printing' && (() => {
+                {/* Paper Type Totals Summary (Offset and Duplo) */}
+                {(() => {
                   const enabledLayers = layersConfig.filter(l => paperLayers[l.key].enabled);
                   if (enabledLayers.length === 0) return null;
 
-                  const layoutDivisorTotal = offsetLayout === 'A4' ? 1 : 2;
+                  const layoutDivisorTotal = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 2 : 1;
+                  const layoutLabel = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 'A4/2up' : 'A4';
                   const totalSheetsPerLeaf = pageQuantity * quantity;
                   const leafA4 = Math.ceil(totalSheetsPerLeaf / layoutDivisorTotal);
                   const leafFs = Math.ceil(totalSheetsPerLeaf / 8);
@@ -1167,7 +1222,7 @@ export default function App() {
                           }}>
                             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>{r.label}</span>
                             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>A4/{offsetLayout === 'A4' ? '1up' : '2up'}: {r.a4.toLocaleString()}</span>
+                              <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {r.a4.toLocaleString()}</span>
                               <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
                               <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {r.fs.toLocaleString()} sheets</span>
                             </div>
@@ -1201,7 +1256,7 @@ export default function App() {
                       }}>
                         <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>Combined Total (Matching Layers)</span>
                         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>A4/{offsetLayout === 'A4' ? '1up' : '2up'}: {totalA4.toLocaleString()}</span>
+                          <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {totalA4.toLocaleString()}</span>
                           <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
                           <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {totalFs.toLocaleString()} sheets</span>
                         </div>
@@ -1248,13 +1303,16 @@ export default function App() {
                             Wastage: {advancedSettings.wastagePercentage}%
                           </span>
                           <span style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
-                            Plate: Rs. {advancedSettings.platePrice}
+                            Plate: Rs. {formatCurrency(advancedSettings.platePrice)}
                           </span>
                           <span style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
-                            {printingMethod === 'Offset Printing' ? `Impr: Rs. ${advancedSettings.impressionCost}/1000` : `Duplo: Rs. ${advancedSettings.duploCost}/sh`}
+                            {printingMethod === 'Offset Printing' ? `Impr: Rs. ${formatCurrency(advancedSettings.impressionCost)}` : `Duplo: Rs. ${formatCurrency(advancedSettings.duploCost)}`}
                           </span>
                           <span style={{ background: '#f3e8ff', border: '1px solid #d8b4fe', color: '#7e22ce', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
-                            Binding: Rs. {advancedSettings.bindingChargesPerBook}/book
+                            Binding: Rs. {formatCurrency(advancedSettings.bindingChargesPerBook)}
+                          </span>
+                          <span style={{ background: '#fdf2f8', border: '1px solid #fbcfe8', color: '#be185d', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
+                            Design: Rs. {formatCurrency(advancedSettings.designingCharge !== undefined ? advancedSettings.designingCharge : 500)}
                           </span>
                         </div>
                         <button
@@ -1286,7 +1344,7 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
                     <button
                       className="btn-action-large blue"
-                      onClick={() => showToast(`Calculating Total Price: Rs. ${estimatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}`)}
+                      onClick={() => showToast(`Calculating Total Price: Rs. ${formatCurrency(estimatedTotal)}`)}
                     >
                       <Calculator size={20} />
                       <span>CALCULATE PRICE</span>
@@ -1341,48 +1399,85 @@ export default function App() {
                       <div className="summary-spec-list" style={{ marginBottom: 0 }}>
                         <div className="summary-spec-row">
                           <span className="summary-spec-label">Paper Cost (+{advancedSettings.wastagePercentage}% Wastage)</span>
-                          <span className="summary-spec-value">Rs. {totalPaperCostWithWastage.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="summary-spec-value">Rs. {formatCurrency(totalPaperCostWithWastage)}</span>
                         </div>
                         <div className="summary-spec-row">
-                          <span className="summary-spec-label">{printingMethod === 'Offset Printing' ? 'Impression Charges' : 'Duplo Printing'}</span>
-                          <span className="summary-spec-value">Rs. {totalPrintingCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="summary-spec-label">{printingMethod === 'Offset Printing' ? 'Impression Charges' : `Duplo Printing (${duploPrintedSheets.toLocaleString()} sheets)`}</span>
+                          <span className="summary-spec-value">Rs. {formatCurrency(totalPrintingCost)}</span>
                         </div>
                         {printingMethod === 'Offset Printing' && (
                           <div className="summary-spec-row">
                             <span className="summary-spec-label">Plate Price</span>
-                            <span className="summary-spec-value">Rs. {totalPlateCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span className="summary-spec-value">Rs. {formatCurrency(totalPlateCost)}</span>
                           </div>
                         )}
                         <div className="summary-spec-row">
-                          <span className="summary-spec-label">Binding Charges</span>
-                          <span className="summary-spec-value">Rs. {totalBindingCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="summary-spec-label">Binding Cost</span>
+                          <span className="summary-spec-value">Rs. {formatCurrency(totalBindingCost)}</span>
                         </div>
+                        {printingMethod === 'Offset Printing' && (
+                          <div className="summary-spec-row">
+                            <span className="summary-spec-label">Transport Charges</span>
+                            <span className="summary-spec-value">Rs. {formatCurrency(totalTransportCost)}</span>
+                          </div>
+                        )}
                         <div className="summary-spec-row">
-                          <span className="summary-spec-label">Transport Charges</span>
-                          <span className="summary-spec-value">Rs. {totalTransportCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="summary-spec-label">Designing Charge</span>
+                          <span className="summary-spec-value">Rs. {formatCurrency(totalDesigningCost)}</span>
                         </div>
                         {totalAdditionalCost > 0 && (
                           <div className="summary-spec-row">
                             <span className="summary-spec-label">{advancedSettings.additionalChargeName || 'Additional Charges'}</span>
-                            <span className="summary-spec-value">Rs. {totalAdditionalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span className="summary-spec-value">Rs. {formatCurrency(totalAdditionalCost)}</span>
                           </div>
                         )}
                         <div className="summary-spec-row" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.35rem', marginTop: '0.2rem' }}>
                           <span className="summary-spec-label" style={{ fontWeight: 800, color: '#334155' }}>Subtotal (Production Cost)</span>
-                          <span className="summary-spec-value" style={{ fontWeight: 800 }}>Rs. {totalBaseCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="summary-spec-value" style={{ fontWeight: 800 }}>Rs. {formatCurrency(totalBaseCost)}</span>
                         </div>
                         <div className="summary-spec-row">
                           <span className="summary-spec-label" style={{ color: '#0d9488' }}>Profit ({advancedSettings.profitPercentage}%)</span>
-                          <span className="summary-spec-value" style={{ color: '#0d9488', fontWeight: 800 }}>Rs. {totalProfitAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="summary-spec-value" style={{ color: '#0d9488', fontWeight: 800 }}>Rs. {formatCurrency(totalProfitAmount)}</span>
                         </div>
+                        {quantity > 1 && (
+                          <div className="summary-spec-row" style={{
+                            borderTop: '1px solid #bbf7d0',
+                            padding: '0.4rem 0.65rem',
+                            marginTop: '0.35rem',
+                            background: '#f0fdf4',
+                            borderRadius: '6px'
+                          }}>
+                            <span className="summary-spec-label" style={{ fontWeight: 700, color: '#166534' }}>Price per Book</span>
+                            <span className="summary-spec-value" style={{ fontWeight: 800, color: '#15803d' }}>Rs. {formatCurrency(estimatedTotal / quantity)}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Green Highlight Box for Total Price */}
-                      <div className="total-price-highlight-box">
-                        <span className="total-price-label">TOTAL PRICE</span>
-                        <span className="total-price-amount">
-                          Rs. {estimatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
+                      <div className="total-price-highlight-box" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                          <span className="total-price-label">TOTAL PRICE</span>
+                          <span className="total-price-amount">
+                            Rs. {formatCurrency(estimatedTotal)}
+                          </span>
+                        </div>
+                        {quantity > 1 && (
+                          <div style={{
+                            width: '100%',
+                            background: '#ffffff',
+                            border: '1px solid #bbf7d0',
+                            borderRadius: '8px',
+                            padding: '0.45rem 0.8rem',
+                            marginTop: '0.4rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                          }}>
+                            <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#166534', letterSpacing: '0.2px' }}>Price per Book</span>
+                            <span style={{ fontSize: '0.98rem', fontWeight: 800, color: '#15803d' }}>Rs. {formatCurrency(estimatedTotal / quantity)}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Print Preview & Print Buttons inside Price Summary */}
@@ -1510,15 +1605,15 @@ export default function App() {
             <div className="calc-results-card">
               <div className="calc-result-row">
                 <span style={{ fontWeight: 700 }}>Selling Price:</span>
-                <span className="result-selling">Rs {totalRevenue.toFixed(2)}</span>
+                <span className="result-selling">Rs. {formatCurrency(totalRevenue)}</span>
               </div>
               <div className="calc-result-row">
                 <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Total Cost:</span>
-                <span className="result-cost">Rs {totalCost.toFixed(2)}</span>
+                <span className="result-cost">Rs. {formatCurrency(totalCost)}</span>
               </div>
               <div className="calc-result-row">
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#16a34a' }}>Profit:</span>
-                <span className="result-profit">Rs {profit.toFixed(2)}</span>
+                <span className="result-profit">Rs. {formatCurrency(profit)}</span>
               </div>
             </div>
 
@@ -1684,7 +1779,9 @@ export default function App() {
               <div className="advanced-setting-card" style={{ gridColumn: '1 / -1' }}>
                 <label className="advanced-setting-label">
                   <span>3. Paper Price (per piece / sheet)</span>
-                  <span style={{ color: '#0d9488' }}>Select paper & edit unit cost</span>
+                  <span style={{ color: '#0d9488' }}>
+                    Standard: Rs. {formatCurrency(DEFAULT_PAPER_PRICES[selectedPaperForPrice] || 25.50)}
+                  </span>
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 140px', gap: '0.6rem', alignItems: 'center' }}>
                   <select
@@ -1693,7 +1790,7 @@ export default function App() {
                     className="paper-type-select"
                     style={{ width: '100%', padding: '0.4rem 0.65rem', fontSize: '0.84rem' }}
                   >
-                    {allPaperOptions.map((paperName) => (
+                    {pricingPaperOptions.map((paperName) => (
                       <option key={paperName} value={paperName}>
                         {paperName}
                       </option>
@@ -1703,8 +1800,8 @@ export default function App() {
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Rs.</span>
                     <input
                       type="number"
-                      step="0.10"
-                      value={advancedSettings.paperPrices[selectedPaperForPrice] !== undefined ? advancedSettings.paperPrices[selectedPaperForPrice] : 3.50}
+                      step="0.50"
+                      value={advancedSettings.paperPrices[selectedPaperForPrice] !== undefined ? advancedSettings.paperPrices[selectedPaperForPrice] : (DEFAULT_PAPER_PRICES[selectedPaperForPrice] || 25.50)}
                       onChange={(e) => updatePaperPrice(selectedPaperForPrice, e.target.value)}
                       className="advanced-input-num"
                     />
@@ -1716,7 +1813,7 @@ export default function App() {
               <div className="advanced-setting-card">
                 <label className="advanced-setting-label">
                   <span>4. Plate Price (Rs.)</span>
-                  <span style={{ color: '#0d9488' }}>Standard: Rs. 1300</span>
+                  <span style={{ color: '#0d9488' }}>Standard: Rs. 1,300.00</span>
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Rs.</span>
@@ -1734,7 +1831,7 @@ export default function App() {
               <div className="advanced-setting-card">
                 <label className="advanced-setting-label">
                   <span>5. Impression Cost (Rs./1000 sheets)</span>
-                  <span style={{ color: '#0d9488' }}>Standard: Rs. 1000</span>
+                  <span style={{ color: '#0d9488' }}>Standard: Rs. 1,000.00</span>
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Rs.</span>
@@ -1766,11 +1863,11 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 7. Binding Charges */}
+              {/* 7. Binding Cost */}
               <div className="advanced-setting-card">
                 <label className="advanced-setting-label">
-                  <span>7. Binding Charges (Rs./book)</span>
-                  <span style={{ color: '#0d9488' }}>Standard: Rs. 80</span>
+                  <span>7. Binding Cost (Rs./book)</span>
+                  <span style={{ color: '#0d9488' }}>Standard: Rs. 80.00</span>
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Rs.</span>
@@ -1785,10 +1882,10 @@ export default function App() {
               </div>
 
               {/* 8. Transport Charges */}
-              <div className="advanced-setting-card" style={{ gridColumn: '1 / -1' }}>
+              <div className="advanced-setting-card">
                 <label className="advanced-setting-label">
                   <span>8. Transport Charges (Rs. Total)</span>
-                  <span style={{ color: '#0d9488' }}>Standard: Rs. 500</span>
+                  <span style={{ color: '#0d9488' }}>Standard: Rs. 500.00</span>
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Rs.</span>
@@ -1802,10 +1899,28 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 9. Additional Charges */}
+              {/* 9. Designing Charge */}
+              <div className="advanced-setting-card">
+                <label className="advanced-setting-label">
+                  <span>9. Designing Charge (Rs. Total)</span>
+                  <span style={{ color: '#0d9488' }}>Standard: Rs. 500.00</span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Rs.</span>
+                  <input
+                    type="number"
+                    step="50"
+                    value={advancedSettings.designingCharge}
+                    onChange={(e) => updateAdvancedSetting('designingCharge', Number(e.target.value))}
+                    className="advanced-input-num"
+                  />
+                </div>
+              </div>
+
+              {/* 10. Additional Charges */}
               <div className="advanced-setting-card" style={{ gridColumn: '1 / -1' }}>
                 <label className="advanced-setting-label">
-                  <span>9. Additional Charges (Custom Extra Service)</span>
+                  <span>10. Additional Charges (Custom Extra Service)</span>
                   <span style={{ color: '#0d9488' }}>Text left, Amount right</span>
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) 140px', gap: '0.6rem', alignItems: 'center' }}>
