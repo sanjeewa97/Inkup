@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:inkup/home_screen.dart';
-import 'package:inkup/main.dart';
+import 'package:print_estimator/main.dart';
 
 void main() {
   testWidgets('Home screen smoke test', (WidgetTester tester) async {
