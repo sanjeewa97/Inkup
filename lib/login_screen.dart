@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 // Title
                 const Text(
-                  'Welcome to Inkup',
+                  'Welcome to PrintEstimator',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -145,6 +145,38 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                           ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Continue Offline Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) => const HomeScreen(),
+                              ),
+                            );
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.teal,
+                      side: const BorderSide(color: Colors.teal, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Continue Offline (Skip Sign In)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ],

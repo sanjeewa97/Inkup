@@ -1,6 +1,6 @@
 {
-    "name": "inkup",
-    "short_name": "inkup",
+    "name": "PrintEstimator",
+    "short_name": "PrintEstimator",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

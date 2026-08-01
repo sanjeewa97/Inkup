@@ -54,28 +54,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Welcome back,',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Welcome back,',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Printing Shop Name',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold, 
-                              color: Color(0xFF1A1A1A), 
-                              letterSpacing: -0.5, 
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Printing Shop Name',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold, 
+                                color: Color(0xFF1A1A1A), 
+                                letterSpacing: -0.5, 
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.logout, color: Colors.redAccent),
@@ -97,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisCount: 3, 
                   crossAxisSpacing: 12, 
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.9, 
+                  childAspectRatio: 0.8, 
                   children: [
                     MenuCard(
                       icon: Icons.receipt_long,
@@ -155,8 +158,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
@@ -220,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 12, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 10 : 6, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? Colors.teal : Colors.transparent, 
           borderRadius: BorderRadius.circular(24),
