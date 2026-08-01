@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'bill_book_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -106,7 +107,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.receipt_long,
                       label: 'Bill Book',
                       color: Colors.deepOrange,
-                      onTap: () => _showCalculator(context, 'Bill Book'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BillBookScreen(),
+                          ),
+                        );
+                      },
                     ),
                     MenuCard(
                       icon: Icons.menu_book,
