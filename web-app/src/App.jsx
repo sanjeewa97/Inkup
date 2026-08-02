@@ -281,14 +281,14 @@ export default function App() {
   const [offsetLayout, setOffsetLayout] = useState('A4');
 
   const updateAdvancedSetting = (field, value) => {
-    setAdvancedSettings(prev => ({
+    updateAndSaveAdvancedSettings(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
   const updatePaperPrice = (paperName, newPrice) => {
-    setAdvancedSettings(prev => ({
+    updateAndSaveAdvancedSettings(prev => ({
       ...prev,
       paperPrices: {
         ...prev.paperPrices,
@@ -391,6 +391,15 @@ export default function App() {
     }
   };
 
+  const updateAndSaveAdvancedSettings = (updater) => {
+    setAdvancedSettings(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+      localStorage.setItem('custom_bill_book_advanced_settings', JSON.stringify(next));
+      saveToCloudSettings({ advancedSettings: next });
+      return next;
+    });
+  };
+
   const showToast = (text) => {
     setNotification(text);
     setTimeout(() => setNotification(null), 3000);
@@ -451,7 +460,7 @@ export default function App() {
       return;
     }
     const newList = [...currentList, pName];
-    setAdvancedSettings(prev => ({
+    updateAndSaveAdvancedSettings(prev => ({
       ...prev,
       paperOrder: newList,
       paperPrices: {
@@ -472,7 +481,7 @@ export default function App() {
     const temp = newList[index - 1];
     newList[index - 1] = newList[index];
     newList[index] = temp;
-    setAdvancedSettings(prev => ({
+    updateAndSaveAdvancedSettings(prev => ({
       ...prev,
       paperOrder: newList
     }));
@@ -486,7 +495,7 @@ export default function App() {
     const temp = newList[index + 1];
     newList[index + 1] = newList[index];
     newList[index] = temp;
-    setAdvancedSettings(prev => ({
+    updateAndSaveAdvancedSettings(prev => ({
       ...prev,
       paperOrder: newList
     }));
@@ -505,7 +514,7 @@ export default function App() {
       return;
     }
     const newList = currentList.map(name => name === oldName ? newName : name);
-    setAdvancedSettings(prev => {
+    updateAndSaveAdvancedSettings(prev => {
       const oldPrice = prev.paperPrices[oldName] || 0;
       const updatedPrices = { ...prev.paperPrices };
       delete updatedPrices[oldName];
@@ -537,7 +546,7 @@ export default function App() {
   const handleDeletePaper = (paperName) => {
     const currentList = getActivePaperOrder(advancedSettings);
     const newList = currentList.filter(n => n !== paperName);
-    setAdvancedSettings(prev => {
+    updateAndSaveAdvancedSettings(prev => {
       const updatedPrices = { ...prev.paperPrices };
       delete updatedPrices[paperName];
       return {
@@ -607,7 +616,6 @@ export default function App() {
       mid3: { enabled: false, paper: 'Carbonized Mid', color: 1 },
       bottom: { enabled: true, paper: 'Carbonized Bot', color: 1 },
     });
-    setAdvancedSettings(getInitialAdvancedSettings());
     showToast('Reset all specifications to default');
   };
 
@@ -2051,7 +2059,7 @@ export default function App() {
                   <input
                     type="number"
                     value={advancedSettings.profitPercentage}
-                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, profitPercentage: Number(e.target.value) || 0 }))}
+                    onChange={(e) => updateAndSaveAdvancedSettings(prev => ({ ...prev, profitPercentage: Number(e.target.value) || 0 }))}
                     style={{ width: '90px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
                   />
                   <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#4F46E5' }}>%</span>
@@ -2074,7 +2082,7 @@ export default function App() {
                   <input
                     type="number"
                     value={advancedSettings.wastagePercentage}
-                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, wastagePercentage: Number(e.target.value) || 0 }))}
+                    onChange={(e) => updateAndSaveAdvancedSettings(prev => ({ ...prev, wastagePercentage: Number(e.target.value) || 0 }))}
                     style={{ width: '90px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
                   />
                   <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#D97706' }}>%</span>
@@ -2098,7 +2106,7 @@ export default function App() {
                   <input
                     type="number"
                     value={advancedSettings.platePrice}
-                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, platePrice: Number(e.target.value) || 0 }))}
+                    onChange={(e) => updateAndSaveAdvancedSettings(prev => ({ ...prev, platePrice: Number(e.target.value) || 0 }))}
                     style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
                   />
                 </div>
@@ -2121,7 +2129,7 @@ export default function App() {
                   <input
                     type="number"
                     value={advancedSettings.impressionCharge}
-                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, impressionCharge: Number(e.target.value) || 0 }))}
+                    onChange={(e) => updateAndSaveAdvancedSettings(prev => ({ ...prev, impressionCharge: Number(e.target.value) || 0 }))}
                     style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
                   />
                 </div>
@@ -2144,7 +2152,7 @@ export default function App() {
                   <input
                     type="number"
                     value={advancedSettings.bindingRate}
-                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, bindingRate: Number(e.target.value) || 0 }))}
+                    onChange={(e) => updateAndSaveAdvancedSettings(prev => ({ ...prev, bindingRate: Number(e.target.value) || 0 }))}
                     style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
                   />
                 </div>
@@ -2167,7 +2175,7 @@ export default function App() {
                   <input
                     type="number"
                     value={advancedSettings.designingCharge}
-                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, designingCharge: Number(e.target.value) || 0 }))}
+                    onChange={(e) => updateAndSaveAdvancedSettings(prev => ({ ...prev, designingCharge: Number(e.target.value) || 0 }))}
                     style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
                   />
                 </div>
@@ -2432,7 +2440,7 @@ export default function App() {
                           value={price}
                           onChange={(e) => {
                             const val = Number(e.target.value) || 0;
-                            setAdvancedSettings(prev => ({
+                            updateAndSaveAdvancedSettings(prev => ({
                               ...prev,
                               paperPrices: {
                                 ...prev.paperPrices,
@@ -2492,7 +2500,7 @@ export default function App() {
                 type="button"
                 className="btn-modal-reset-modern"
                 onClick={() => {
-                  setAdvancedSettings(getInitialAdvancedSettings());
+                  updateAndSaveAdvancedSettings(getInitialAdvancedSettings());
                   showToast('Reset rates to default shop prices');
                 }}
               >
@@ -2970,29 +2978,7 @@ export default function App() {
                 type="button"
                 className="btn-modal-reset-modern"
                 onClick={() => {
-                  setAdvancedSettings({
-                    profitPercentage: 40,
-                    wastagePercentage: 15,
-                    paperPrices: {
-                      'NCR Carbonized Paper': 3.50,
-                      'Bank Paper': 3.00,
-                      'Art Paper 120g': 5.00,
-                      'Art Paper 150g': 6.50,
-                      'Art Board 230g': 10.00,
-                      'Art Board 300g': 12.00,
-                      'Bond Paper 80g': 4.00,
-                      'Ledger Paper': 4.50,
-                      'Manifold Paper': 2.50,
-                      'Choose paper type': 3.00,
-                    },
-                    platePrice: 1300,
-                    impressionCost: 1000,
-                    duploCost: 3.5,
-                    bindingChargesPerBook: 80,
-                    transportCharges: 500,
-                    additionalChargeName: '',
-                    additionalChargeAmount: 0.00,
-                  });
+                  updateAndSaveAdvancedSettings(getInitialAdvancedSettings());
                   showToast('Reset to standard defaults');
                 }}
               >
