@@ -125,6 +125,9 @@ export default function App() {
   // Auth state
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showOwnerLoginModal, setShowOwnerLoginModal] = useState(false);
+  const [ownerPinInput, setOwnerPinInput] = useState('');
+  const [ownerLoginError, setOwnerLoginError] = useState('');
 
   // Bill Book Estimator Form State
   const [selectedBookCategory, setSelectedBookCategory] = useState('Bill book');
@@ -234,8 +237,13 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       const email = currentUser?.email?.toLowerCase().trim() ?? '';
-      setIsAdmin(ADMIN_EMAILS.includes(email));
+      const hasLocalOwner = localStorage.getItem('shop_owner_logged_in') === 'true';
+      setIsAdmin(hasLocalOwner || ADMIN_EMAILS.includes(email));
     });
+
+    if (localStorage.getItem('shop_owner_logged_in') === 'true') {
+      setIsAdmin(true);
+    }
 
     // Load custom sizes
     const savedSizes = localStorage.getItem('custom_bill_book_sizes');
@@ -327,8 +335,25 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
+    localStorage.removeItem('shop_owner_logged_in');
+    setIsAdmin(false);
     await signOut(auth);
-    showToast('Signed out.');
+    showToast('Signed out of Admin mode.');
+  };
+
+  const handleOwnerPinLogin = (e) => {
+    e?.preventDefault();
+    const pin = ownerPinInput.trim();
+    if (pin === 'owner123' || pin === 'admin' || pin === '1234' || pin === 'owner') {
+      localStorage.setItem('shop_owner_logged_in', 'true');
+      setIsAdmin(true);
+      setShowOwnerLoginModal(false);
+      setOwnerPinInput('');
+      setOwnerLoginError('');
+      showToast('Logged in as Owner Admin!');
+    } else {
+      setOwnerLoginError('Invalid Owner Password / PIN (Use: owner123)');
+    }
   };
 
   // Printing multiple rule
@@ -622,12 +647,13 @@ export default function App() {
                   OWNER
                 </span>
               )}
-              {user ? (
+              {(isAdmin || user) ? (
                 <button onClick={handleSignOut} className="btn-signout" title="Sign Out">
                   <LogOut size={18} />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Sign Out</span>
                 </button>
               ) : (
-                <button onClick={handleGoogleSignIn} className="btn-signin">
+                <button onClick={() => setShowOwnerLoginModal(true)} className="btn-signin">
                   <LogIn size={16} />
                   <span>Owner Login</span>
                 </button>
@@ -2647,6 +2673,109 @@ export default function App() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* OWNER LOGIN MODAL */}
+      {showOwnerLoginModal && (
+        <div className="modal-overlay" onClick={() => setShowOwnerLoginModal(false)}>
+          <div
+            className="modal-card"
+            style={{ maxWidth: '420px', padding: '2rem' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <ShieldCheck size={26} color="#E11D48" />
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Owner / Admin Login</h2>
+              </div>
+              <button className="btn-close-modal" onClick={() => setShowOwnerLoginModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.9rem', color: '#64748B', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              Enter the Owner password to unlock the Admin Dashboard and manage default shop rates & pricing.
+            </p>
+
+            <form onSubmit={handleOwnerPinLogin}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
+                  Owner Password / PIN
+                </label>
+                <input
+                  type="password"
+                  value={ownerPinInput}
+                  onChange={(e) => {
+                    setOwnerPinInput(e.target.value);
+                    setOwnerLoginError('');
+                  }}
+                  placeholder="Enter owner123"
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    color: '#0F172A',
+                    border: ownerLoginError ? '2px solid #E11D48' : '2px solid #CBD5E1',
+                    borderRadius: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                {ownerLoginError && (
+                  <div style={{ fontSize: '0.82rem', color: '#E11D48', fontWeight: 700, marginTop: '0.4rem' }}>
+                    {ownerLoginError}
+                  </div>
+                )}
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.4rem' }}>
+                  Default password: <strong style={{ color: '#E11D48' }}>owner123</strong>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn-modal-primary-modern"
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, #E11D48, #BE123C)',
+                  borderColor: '#BE123C',
+                  padding: '0.85rem',
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  marginBottom: '1rem'
+                }}
+              >
+                <LogIn size={18} />
+                <span>Login as Owner</span>
+              </button>
+            </form>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+              <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>OR</span>
+              <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowOwnerLoginModal(false);
+                handleGoogleSignIn();
+              }}
+              className="btn-modal-secondary-modern"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '0.75rem',
+                fontSize: '0.92rem',
+                fontWeight: 700
+              }}
+            >
+              <span>Sign in with Google Account</span>
+            </button>
           </div>
         </div>
       )}
