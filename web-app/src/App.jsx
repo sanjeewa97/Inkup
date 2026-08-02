@@ -127,6 +127,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Bill Book Estimator Form State
+  const [selectedBookCategory, setSelectedBookCategory] = useState('Billbook');
   const [customSizes, setCustomSizes] = useState([]);
   const [selectedSize, setSelectedSize] = useState('A4 size');
   const [printingMethod, setPrintingMethod] = useState('Offset Printing'); // 'Offset Printing' or 'Duplo Printing'
@@ -694,7 +695,7 @@ export default function App() {
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <ReceiptText size={24} color="#ffffff" />
-                <h1 className="subscreen-nav-title">Books Price Calculator</h1>
+                <h1 className="subscreen-nav-title">{selectedBookCategory} Price Calculator</h1>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
@@ -707,6 +708,20 @@ export default function App() {
                 <span>More</span>
               </button>
             </div>
+          </div>
+
+          {/* BOOK CATEGORY SELECTION BAR (In the marked area below subscreen header) */}
+          <div className="book-category-bar">
+            {['Billbook', 'Pad book', 'Letter head books', 'Pass books', 'Other books'].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`book-cat-pill ${selectedBookCategory === cat ? 'active' : ''}`}
+                onClick={() => setSelectedBookCategory(cat)}
+              >
+                <span>{cat}</span>
+              </button>
+            ))}
           </div>
 
           {/* Owner Banner */}
@@ -1623,6 +1638,10 @@ export default function App() {
                     </div>
                     <div className="card-body-padded">
                       <div className="summary-spec-list">
+                        <div className="summary-spec-row">
+                          <span className="summary-spec-label">Book Type</span>
+                          <span className="summary-spec-value" style={{ fontWeight: 800, color: '#4f46e5' }}>{selectedBookCategory}</span>
+                        </div>
                         <div className="summary-spec-row">
                           <span className="summary-spec-label">Selected Size</span>
                           <span className="summary-spec-value">{selectedSize}</span>
