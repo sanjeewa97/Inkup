@@ -1004,7 +1004,7 @@ export default function App() {
 
 
                       {/* 5 Layer Sheets List Table: Top, Mid 1, Mid 2, Mid 3, Bottom */}
-                      <div className="paper-list-container">
+                      <div className="paper-list-container desktop-table-view">
                         {/* Table Header Bar */}
                         <div
                           className="paper-list-header-row"
@@ -1369,6 +1369,161 @@ export default function App() {
                         </div>
                       )}
                     </div>
+
+                    {/* DEDICATED MOBILE VIEW FOR CARD 3 (ONLY visible on phone screens <= 768px) */}
+                    <div className="mobile-cards-view">
+                      {layersConfig.map((layer) => {
+                        const currentData = paperLayers[layer.key];
+                        const isOptional = layer.key === 'mid1' || layer.key === 'mid2' || layer.key === 'mid3';
+                        const isEnabled = currentData.enabled;
+                        const isTopNcr = paperLayers.top.paper === 'NCR Carbonized Paper';
+                        const layerPaperOptions = layer.key === 'top'
+                          ? allPaperOptions
+                          : (isTopNcr
+                            ? ['NCR Carbonized Paper']
+                            : allPaperOptions.filter(p => p !== 'NCR Carbonized Paper'));
+
+                        const getNcrLabel = (paperName) => {
+                          if (paperName !== 'NCR Carbonized Paper') return paperName;
+                          if (layer.key === 'top') return 'NCR top';
+                          if (layer.key === 'bottom') return 'NCR bot';
+                          return 'NCR mid';
+                        };
+
+                        const sizeDivisor = getRequiredMultiple(selectedSize);
+                        const layoutDivisor = offsetLayout === 'A4' ? 1 : 2;
+                        const layerLeaves = isEnabled ? (pageQuantity * quantity) : 0;
+                        const layerA4Sheets = isEnabled ? Math.ceil(layerLeaves / sizeDivisor) : 0;
+                        const layerA4TwoUp = isEnabled ? Math.ceil(layerA4Sheets / layoutDivisor) : 0;
+                        const layerFullSheets = isEnabled ? Math.ceil(layerA4Sheets / 8) : 0;
+
+                        return (
+                          <div
+                            key={layer.key}
+                            className={`mobile-layer-card ${isEnabled ? 'enabled' : 'disabled'}`}
+                          >
+                            <div className="mobile-layer-header">
+                              <div className="mobile-layer-title-group">
+                                {isOptional && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isEnabled}
+                                    onChange={(e) => updateLayer(layer.key, 'enabled', e.target.checked)}
+                                    style={{ width: '18px', height: '18px', accentColor: '#0d9488', cursor: 'pointer' }}
+                                  />
+                                )}
+                                <FileText size={18} color={isEnabled ? layer.badgeText : '#94a3b8'} />
+                                <div>
+                                  <div className="mobile-layer-title-text" style={{ color: isEnabled ? '#0f172a' : '#64748b' }}>
+                                    {layer.title}
+                                  </div>
+                                  <div className="mobile-layer-subtitle-text" style={{ color: isEnabled ? layer.badgeText : '#94a3b8' }}>
+                                    {layer.subtitle}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div>
+                                {!isEnabled ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => updateLayer(layer.key, 'enabled', true)}
+                                    className="btn-mobile-include"
+                                  >
+                                    <PlusCircle size={15} />
+                                    <span>+ Include Layer</span>
+                                  </button>
+                                ) : (
+                                  <span className="mobile-layer-badge">
+                                    Full: {layerFullSheets} sh.
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {isEnabled && (
+                              <div className="mobile-layer-body">
+                                <div>
+                                  <div className="mobile-field-label">PAPER TYPE</div>
+                                  <select
+                                    value={currentData.paper}
+                                    onChange={(e) => updateLayer(layer.key, 'paper', e.target.value)}
+                                    className="form-select mobile-select"
+                                  >
+                                    {layerPaperOptions.map((paperName) => (
+                                      <option key={paperName} value={paperName}>
+                                        {getNcrLabel(paperName)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div className="mobile-layer-2col">
+                                  <div>
+                                    <div className="mobile-field-label">PRINTING COLOR</div>
+                                    {printingMethod === 'Offset Printing' ? (
+                                      <select
+                                        value={currentData.color}
+                                        onChange={(e) => updateLayer(layer.key, 'color', Number(e.target.value))}
+                                        className="form-select mobile-select"
+                                      >
+                                        {OFFSET_COLOR_OPTIONS.map((col) => (
+                                          <option key={col.id} value={col.id}>
+                                            {col.label} ({col.id}C)
+                                          </option>
+                                        ))}
+                                        {layer.key !== 'top' && (
+                                          <option value={0}>Do not print</option>
+                                        )}
+                                      </select>
+                                    ) : (
+                                      layer.key === 'top' ? (
+                                        <div className="mobile-static-field blue">Single Color</div>
+                                      ) : (
+                                        <select
+                                          value={currentData.color}
+                                          onChange={(e) => updateLayer(layer.key, 'color', Number(e.target.value))}
+                                          className="form-select mobile-select"
+                                        >
+                                          <option value={1}>Single Color</option>
+                                          <option value={0}>Do not print</option>
+                                        </select>
+                                      )
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <div className="mobile-field-label">
+                                      {printingMethod === 'Offset Printing' ? 'CUT (A4 / 2UP)' : 'CUT SHEETS'}
+                                    </div>
+                                    {printingMethod === 'Offset Printing' ? (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                        <select
+                                          value={offsetLayout}
+                                          onChange={(e) => setOffsetLayout(e.target.value)}
+                                          className="form-select mobile-select"
+                                          style={{ width: '72px', padding: '0.5rem 0.4rem' }}
+                                        >
+                                          <option value="A4">A4</option>
+                                          <option value="2up">2up</option>
+                                        </select>
+                                        <div className="mobile-static-field green" style={{ flex: 1 }}>
+                                          {layerA4TwoUp.toLocaleString()} sh.
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="mobile-static-field green">
+                                        A4: {layerA4TwoUp.toLocaleString()} sh.
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Card 4: 4. ADVANCED SETTINGS (Teal Ribbon) */}
@@ -1624,55 +1779,56 @@ export default function App() {
         </>
       )}
 
-      {/* FLOATING BOTTOM NAVIGATION BAR (Exactly like Android App lines 168-192) */}
-      <div className="bottom-navbar-wrapper">
-        <nav className="bottom-navbar">
-          <div
-            className={`nav-pill ${activeNavTab === 0 ? 'active' : ''}`}
-            onClick={() => {
-              setActiveNavTab(0);
-              setCurrentScreen('home');
-            }}
-          >
-            <Home size={22} className="nav-icon" />
-            {activeNavTab === 0 && <span>Home</span>}
-          </div>
+      {/* FLOATING BOTTOM NAVIGATION BAR (ONLY shown on Homepage so it NEVER overlaps calculators or buttons!) */}
+      {currentScreen === 'home' && (
+        <div className="bottom-navbar-wrapper">
+          <nav className="bottom-navbar">
+            <div
+              className={`nav-pill ${activeNavTab === 0 ? 'active' : ''}`}
+              onClick={() => {
+                setActiveNavTab(0);
+                setCurrentScreen('home');
+              }}
+            >
+              <Home size={22} className="nav-icon" />
+              {activeNavTab === 0 && <span>Home</span>}
+            </div>
 
-          <div
-            className={`nav-pill ${activeNavTab === 1 ? 'active' : ''}`}
-            onClick={() => {
-              setActiveNavTab(1);
-              showToast('Other items view coming soon!');
-            }}
-          >
-            <LayoutGrid size={22} className="nav-icon" />
-            {activeNavTab === 1 && <span>Other</span>}
-          </div>
+            <div
+              className={`nav-pill ${activeNavTab === 1 ? 'active' : ''}`}
+              onClick={() => {
+                setActiveNavTab(1);
+                showToast('Other items view coming soon!');
+              }}
+            >
+              <LayoutGrid size={22} className="nav-icon" />
+              {activeNavTab === 1 && <span>Other</span>}
+            </div>
 
-          <div
-            className={`nav-pill ${activeNavTab === 2 ? 'active' : ''}`}
-            onClick={() => {
-              setActiveNavTab(2);
-              showToast('No new notifications.');
-            }}
-          >
-            <Bell size={22} className="nav-icon" />
-            {activeNavTab === 2 && <span>Notification</span>}
-          </div>
+            <div
+              className={`nav-pill ${activeNavTab === 2 ? 'active' : ''}`}
+              onClick={() => {
+                setActiveNavTab(2);
+                showToast('No new notifications.');
+              }}
+            >
+              <Bell size={22} className="nav-icon" />
+              {activeNavTab === 2 && <span>Notification</span>}
+            </div>
 
-          <div
-            className={`nav-pill ${activeNavTab === 3 ? 'active' : ''}`}
-            onClick={() => {
-              setActiveNavTab(3);
-              if (!user) handleGoogleSignIn();
-              else showToast(`Signed in as ${user.email}`);
-            }}
-          >
-            <User size={22} className="nav-icon" />
-            {activeNavTab === 3 && <span>Account</span>}
-          </div>
-        </nav>
-      </div>
+            <div
+              className={`nav-pill ${activeNavTab === 3 ? 'active' : ''}`}
+              onClick={() => {
+                setActiveNavTab(3);
+                setShowLoginModal(true);
+              }}
+            >
+              <User size={22} className="nav-icon" />
+              {activeNavTab === 3 && <span>{user ? 'Account' : 'Login'}</span>}
+            </div>
+          </nav>
+        </div>
+      )}
 
       {/* CALCULATOR DIALOG MODAL (For Pad Book, Poly Bag, etc. exactly like Android app) */}
       {calcModalItem && (
