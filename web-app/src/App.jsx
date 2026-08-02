@@ -740,7 +740,8 @@ export default function App() {
               : 0;
 
             // 4) Binding, Transport, Designing, Additional
-            const bindingRatePerBook = getBindingRatePerBook(quantity, pageQuantity);
+            const totalLeavesPerBook = pageQuantity * enabledLayersList.length;
+            const bindingRatePerBook = getBindingRatePerBook(quantity, totalLeavesPerBook);
             const totalBindingCost = quantity * bindingRatePerBook;
             const totalTransportCost = printingMethod === 'Offset Printing'
               ? (Number(advancedSettings.transportCharges) || 0)
