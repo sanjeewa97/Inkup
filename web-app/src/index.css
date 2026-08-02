@@ -1241,35 +1241,70 @@ body {
 
 /* =========================================================
    ANDROID & IPHONE (iOS) MOBILE RESPONSIVE OPTIMIZATIONS
+   (COVERING ALL SCREENS, MODALS, CARDS & TABLES)
    ========================================================= */
 
+/* Support iPhone Notch / Dynamic Island & Android Status Bars */
+.subscreen-navbar, .home-header {
+  padding-top: calc(0.9rem + env(safe-area-inset-top));
+  padding-left: calc(1.75rem + env(safe-area-inset-left));
+  padding-right: calc(1.75rem + env(safe-area-inset-right));
+}
+
 @media (max-width: 768px) {
-  /* Prevent iOS Safari auto-zoom when tapping inputs or selects */
+  /* 1) Prevent iOS Safari auto-zoom when tapping inputs or selects across all screens */
   input, select, textarea {
     font-size: 16px !important;
   }
 
-  /* Ensure comfortable tap targets for fingers on touch screens */
+  /* 2) Ensure comfortable tap targets for fingers on touch screens */
   button, select, input[type="text"], input[type="number"] {
     min-height: 42px;
   }
 
-  /* Enable smooth swipe scrolling for tables on mobile */
+  /* 3) Enable smooth swipe scrolling for all tables and summary cards */
   .paper-table-wrapper, .table-responsive, .spec-summary-content {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
 
-  /* Optimize modal card width on mobile screens */
-  .modal-card {
+  /* 4) Optimize all Modal Cards (Advanced Settings, Custom Size/Paper, Quotation, Login) */
+  .modal-card, .advanced-settings-modal {
     width: 95% !important;
-    max-height: 92vh !important;
+    max-height: 90vh !important;
     padding: 1.25rem !important;
     margin: 10px auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Stack modal buttons neatly if needed */
+  .modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* 5) Optimize table cell padding for smaller screens */
+  .paper-table-wrapper th, .paper-table-wrapper td {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.82rem;
   }
 }
 
 @media (max-width: 480px) {
+  /* 1) Home Grid: 2 clean columns on small phones instead of cramped 3 columns */
+  .home-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .menu-card {
+    padding: 1rem 0.5rem;
+  }
+
+  /* 2) Compact Navigation Header */
   .subscreen-navbar {
     padding: 0.75rem 1rem;
   }
@@ -1282,9 +1317,18 @@ body {
     padding: 1rem 1rem 0.5rem;
   }
 
+  /* 3) 2-Column Dashboard layout on small screens */
   .app-content-2col {
     padding: 0.5rem 0.75rem 3rem;
     gap: 0.75rem;
   }
+
+  /* 4) Quotation Preview buttons stacked cleanly */
+  .preview-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
 }
+
 
