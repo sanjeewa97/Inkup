@@ -647,7 +647,8 @@ export default function App() {
           {(() => {
             const enabledLayersList = layersConfig.filter(l => paperLayers[l.key].enabled);
             const totalPagesPerBook = enabledLayersList.length * pageQuantity;
-            const totalPrintedSheets = totalPagesPerBook * quantity;
+            const sizeDivisor = getRequiredMultiple(selectedSize);
+            const totalPrintedSheets = Math.ceil((totalPagesPerBook * quantity) / sizeDivisor);
 
             // 1) Paper Cost = (paper price * full sheet) + wastage allowance
             const totalRawPaperCost = enabledLayersList.reduce((sum, layer) => {
@@ -663,8 +664,9 @@ export default function App() {
                 : (advancedSettings.paperPrices[pName] !== undefined
                   ? advancedSettings.paperPrices[pName]
                   : (DEFAULT_PAPER_PRICES[pricingKey] !== undefined ? DEFAULT_PAPER_PRICES[pricingKey] : 25.50));
-              const layerTotalSheets = quantity * pageQuantity;
-              const layerFullSheets = Math.ceil(layerTotalSheets / 8);
+              const layerLeaves = quantity * pageQuantity;
+              const layerA4Sheets = Math.ceil(layerLeaves / sizeDivisor);
+              const layerFullSheets = Math.ceil(layerA4Sheets / 8);
               return sum + (unitPrice * layerFullSheets);
             }, 0);
             const totalWastageCost = totalRawPaperCost * ((Number(advancedSettings.wastagePercentage) || 0) / 100);
@@ -674,7 +676,9 @@ export default function App() {
             // 2) Printing / Impression / Duplo Cost
             const duploPrintedSheets = enabledLayersList.reduce((sum, layer) => {
               const isPrinted = paperLayers[layer.key].color > 0;
-              return sum + (isPrinted ? (quantity * pageQuantity) : 0);
+              const layerLeaves = quantity * pageQuantity;
+              const layerA4Sheets = Math.ceil(layerLeaves / sizeDivisor);
+              return sum + (isPrinted ? layerA4Sheets : 0);
             }, 0);
             const totalPrintingCost = printingMethod === 'Offset Printing'
               ? Math.max(1, Math.ceil(totalPrintedSheets / 1000)) * (Number(advancedSettings.impressionCost) || 0)
@@ -964,11 +968,13 @@ export default function App() {
                   };
 
                   // Offset printing sheet calculations per layer (uses global offsetLayout)
+                  const sizeDivisor = getRequiredMultiple(selectedSize);
                   const layoutDivisor = offsetLayout === 'A4' ? 1 : 2;
-                  const layerTotalSheets = isEnabled ? (pageQuantity * quantity) : 0;
-                  const layerA4TwoUp = isEnabled ? Math.ceil(layerTotalSheets / layoutDivisor) : 0;
+                  const layerLeaves = isEnabled ? (pageQuantity * quantity) : 0;
+                  const layerA4Sheets = isEnabled ? Math.ceil(layerLeaves / sizeDivisor) : 0;
+                  const layerA4TwoUp = isEnabled ? Math.ceil(layerA4Sheets / layoutDivisor) : 0;
                   // Full sheet is ALWAYS calculated from A4 sheet count / 8 (same whether A4 or 2up)
-                  const layerFullSheets = isEnabled ? Math.ceil(layerTotalSheets / 8) : 0;
+                  const layerFullSheets = isEnabled ? Math.ceil(layerA4Sheets / 8) : 0;
 
                   return (
                     <div
@@ -1154,7 +1160,7 @@ export default function App() {
                               }}>
                                 A4
                               </span>
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerTotalSheets.toLocaleString()}</span>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerA4Sheets.toLocaleString()}</span>
                             </>
                           )
                         ) : (
@@ -1182,11 +1188,13 @@ export default function App() {
                   const enabledLayers = layersConfig.filter(l => paperLayers[l.key].enabled);
                   if (enabledLayers.length === 0) return null;
 
+                  const sizeDivisor = getRequiredMultiple(selectedSize);
                   const layoutDivisorTotal = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 2 : 1;
                   const layoutLabel = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 'A4/2up' : 'A4';
-                  const totalSheetsPerLeaf = pageQuantity * quantity;
-                  const leafA4 = Math.ceil(totalSheetsPerLeaf / layoutDivisorTotal);
-                  const leafFs = Math.ceil(totalSheetsPerLeaf / 8);
+                  const totalLeavesPerPly = pageQuantity * quantity;
+                  const plyA4Sheets = Math.ceil(totalLeavesPerPly / sizeDivisor);
+                  const leafA4 = Math.ceil(plyA4Sheets / layoutDivisorTotal);
+                  const leafFs = Math.ceil(plyA4Sheets / 8);
 
                   // Case 1: All enabled layers are NCR Carbonized Paper
                   // Show separate totals for NCR top, NCR mid (sum of mid leaves), and NCR bot

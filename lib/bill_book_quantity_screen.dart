@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class BillBookQuantityScreen extends StatefulWidget {
   final String selectedSize;
 
-  const BillBookQuantityScreen({
-    super.key,
-    required this.selectedSize,
-  });
+  const BillBookQuantityScreen({super.key, required this.selectedSize});
 
   @override
   State<BillBookQuantityScreen> createState() => _BillBookQuantityScreenState();
@@ -37,8 +34,10 @@ class _BillBookQuantityScreenState extends State<BillBookQuantityScreen> {
     if (lower == 'a4 size' || lower == 'a4') return 1;
     if (lower == 'a5 size' || lower == 'a5') return 2;
     if (lower == 'a6 size' || lower == 'a6') return 4;
-    if (lower == 'a4/3 size' || lower == 'a4/3' || lower.contains('a4/3')) return 3;
-    if (lower == 'a4/4 size' || lower == 'a4/4' || lower.contains('a4/4')) return 4;
+    if (lower == 'a4/3 size' || lower == 'a4/3' || lower.contains('a4/3'))
+      return 3;
+    if (lower == 'a4/4 size' || lower == 'a4/4' || lower.contains('a4/4'))
+      return 4;
     return 1;
   }
 
@@ -74,7 +73,7 @@ class _BillBookQuantityScreenState extends State<BillBookQuantityScreen> {
           multiple * 5,
           multiple * 10,
           multiple * 20,
-          multiple * 50
+          multiple * 50,
         ];
     }
   }
@@ -123,14 +122,20 @@ class _BillBookQuantityScreenState extends State<BillBookQuantityScreen> {
   @override
   Widget build(BuildContext context) {
     final quickOptions = _getQuickSelectOptions(_requiredMultiple);
-    final isValid = _errorMessage == null && _quantity > 0 && (_quantity % _requiredMultiple == 0);
+    final isValid =
+        _errorMessage == null &&
+        _quantity > 0 &&
+        (_quantity % _requiredMultiple == 0);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text(
           'Bill Book Estimator',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A1A),
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -200,7 +205,11 @@ class _BillBookQuantityScreenState extends State<BillBookQuantityScreen> {
               color: const Color(0xFFE3F2FD),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, color: Color(0xFF1565C0), size: 20),
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF1565C0),
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -272,8 +281,9 @@ class _BillBookQuantityScreenState extends State<BillBookQuantityScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color:
-                                    isSelected ? Colors.white : const Color(0xFF333333),
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF333333),
                               ),
                             ),
                           ),
@@ -321,8 +331,9 @@ class _BillBookQuantityScreenState extends State<BillBookQuantityScreen> {
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.white,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
