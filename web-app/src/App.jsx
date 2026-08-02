@@ -204,25 +204,6 @@ export default function App() {
   // Global layout selection for Offset Printing: 'A4' or '2up' — applies to ALL layers
   const [offsetLayout, setOffsetLayout] = useState('A4');
 
-  // Smart Bottom Navbar Auto-Hide on Scroll Down, Reveal on Scroll Up
-  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
-  const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY.current + 10 && currentScrollY > 40) {
-        setIsNavbarVisible(false);
-      } else if (currentScrollY < lastScrollY.current - 5 || currentScrollY <= 20) {
-        setIsNavbarVisible(true);
-      }
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   const updateAdvancedSetting = (field, value) => {
     setAdvancedSettings(prev => ({
       ...prev,
@@ -693,6 +674,55 @@ export default function App() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* DOCKED BOTTOM NAVIGATION BAR (Sits cleanly below the 8 web app icons, NEVER floating over icons, NEVER coming in front of icons when scrolling!) */}
+            <div className="docked-bottom-navbar-wrapper">
+              <nav className="bottom-navbar">
+                <div
+                  className={`nav-pill ${activeNavTab === 0 ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveNavTab(0);
+                    setCurrentScreen('home');
+                  }}
+                >
+                  <Home size={22} className="nav-icon" />
+                  {activeNavTab === 0 && <span>Home</span>}
+                </div>
+
+                <div
+                  className={`nav-pill ${activeNavTab === 1 ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveNavTab(1);
+                    showToast('Other items view coming soon!');
+                  }}
+                >
+                  <LayoutGrid size={22} className="nav-icon" />
+                  {activeNavTab === 1 && <span>Other</span>}
+                </div>
+
+                <div
+                  className={`nav-pill ${activeNavTab === 2 ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveNavTab(2);
+                    showToast('No new notifications.');
+                  }}
+                >
+                  <Bell size={22} className="nav-icon" />
+                  {activeNavTab === 2 && <span>Notification</span>}
+                </div>
+
+                <div
+                  className={`nav-pill ${activeNavTab === 3 ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveNavTab(3);
+                    setShowLoginModal(true);
+                  }}
+                >
+                  <User size={22} className="nav-icon" />
+                  {activeNavTab === 3 && <span>{user ? 'Account' : 'Login'}</span>}
+                </div>
+              </nav>
             </div>
           </main>
         </>
@@ -1796,57 +1826,6 @@ export default function App() {
             );
           })()}
         </>
-      )}
-
-      {/* FLOATING BOTTOM NAVIGATION BAR (ONLY shown on Homepage so it NEVER overlaps calculators or buttons!) */}
-      {currentScreen === 'home' && (
-        <div className={`bottom-navbar-wrapper ${isNavbarVisible ? 'visible' : 'hidden'}`}>
-          <nav className="bottom-navbar">
-            <div
-              className={`nav-pill ${activeNavTab === 0 ? 'active' : ''}`}
-              onClick={() => {
-                setActiveNavTab(0);
-                setCurrentScreen('home');
-              }}
-            >
-              <Home size={22} className="nav-icon" />
-              {activeNavTab === 0 && <span>Home</span>}
-            </div>
-
-            <div
-              className={`nav-pill ${activeNavTab === 1 ? 'active' : ''}`}
-              onClick={() => {
-                setActiveNavTab(1);
-                showToast('Other items view coming soon!');
-              }}
-            >
-              <LayoutGrid size={22} className="nav-icon" />
-              {activeNavTab === 1 && <span>Other</span>}
-            </div>
-
-            <div
-              className={`nav-pill ${activeNavTab === 2 ? 'active' : ''}`}
-              onClick={() => {
-                setActiveNavTab(2);
-                showToast('No new notifications.');
-              }}
-            >
-              <Bell size={22} className="nav-icon" />
-              {activeNavTab === 2 && <span>Notification</span>}
-            </div>
-
-            <div
-              className={`nav-pill ${activeNavTab === 3 ? 'active' : ''}`}
-              onClick={() => {
-                setActiveNavTab(3);
-                setShowLoginModal(true);
-              }}
-            >
-              <User size={22} className="nav-icon" />
-              {activeNavTab === 3 && <span>{user ? 'Account' : 'Login'}</span>}
-            </div>
-          </nav>
-        </div>
       )}
 
       {/* CALCULATOR DIALOG MODAL (For Pad Book, Poly Bag, etc. exactly like Android app) */}
