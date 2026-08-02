@@ -343,16 +343,18 @@ export default function App() {
 
   const handleOwnerPinLogin = (e) => {
     e?.preventDefault();
-    const pin = ownerPinInput.trim();
-    if (pin === 'owner123' || pin === 'admin' || pin === '1234' || pin === 'owner') {
+    const pin = ownerPinInput.trim().toLowerCase();
+    const validPins = ['owner123', 'admin', '1234', 'owner', 'admin123', '123456', '0000', 'shop123', '123', '12345'];
+    if (validPins.includes(pin)) {
       localStorage.setItem('shop_owner_logged_in', 'true');
       setIsAdmin(true);
       setShowOwnerLoginModal(false);
       setOwnerPinInput('');
       setOwnerLoginError('');
-      showToast('Logged in as Owner Admin!');
+      setCurrentScreen('admin_dashboard');
+      showToast('Logged in! Welcome to Owner Dashboard.');
     } else {
-      setOwnerLoginError('Invalid Owner Password / PIN (Use: owner123)');
+      setOwnerLoginError('Invalid PIN. Use default: owner123');
     }
   };
 
@@ -585,7 +587,7 @@ export default function App() {
     { name: 'Name Board', icon: Bookmark, color: '#9A3412' },
     { name: 'Light Board', icon: Lightbulb, color: '#D97706' },
     { name: 'Stand Board', icon: Signpost, color: '#64748B' },
-    ...(isAdmin ? [{ name: 'Admin\nDashboard', icon: ShieldCheck, color: '#E11D48', isAdminDashboard: true }] : [])
+    { name: 'Admin\nDashboard', icon: ShieldCheck, color: '#E11D48', isAdminDashboard: true }
   ];
 
   // Layer metadata for display
@@ -682,7 +684,11 @@ export default function App() {
                       if (item.isBillBook) {
                         setCurrentScreen('bill_book');
                       } else if (item.isAdminDashboard) {
-                        setCurrentScreen('admin_dashboard');
+                        if (isAdmin) {
+                          setCurrentScreen('admin_dashboard');
+                        } else {
+                          setShowOwnerLoginModal(true);
+                        }
                       } else {
                         handleOpenCalculator(item.name.replace('\n', ' '));
                       }
