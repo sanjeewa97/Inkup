@@ -201,7 +201,7 @@ export default function App() {
   const [showAdvancedModal, setShowAdvancedModal] = useState(false);
 
   // Global layout selection for Offset Printing: 'A4' or '2up' — applies to ALL layers
-  const [offsetLayout, setOffsetLayout] = useState('2up');
+  const [offsetLayout, setOffsetLayout] = useState('A4');
 
   const updateAdvancedSetting = (field, value) => {
     setAdvancedSettings(prev => ({
