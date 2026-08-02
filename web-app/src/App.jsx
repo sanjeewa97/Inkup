@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { auth, googleProvider, db } from './firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -203,6 +203,25 @@ export default function App() {
 
   // Global layout selection for Offset Printing: 'A4' or '2up' — applies to ALL layers
   const [offsetLayout, setOffsetLayout] = useState('A4');
+
+  // Smart Bottom Navbar Auto-Hide on Scroll Down, Reveal on Scroll Up
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY.current + 10 && currentScrollY > 40) {
+        setIsNavbarVisible(false);
+      } else if (currentScrollY < lastScrollY.current - 5 || currentScrollY <= 20) {
+        setIsNavbarVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const updateAdvancedSetting = (field, value) => {
     setAdvancedSettings(prev => ({
@@ -1781,7 +1800,7 @@ export default function App() {
 
       {/* FLOATING BOTTOM NAVIGATION BAR (ONLY shown on Homepage so it NEVER overlaps calculators or buttons!) */}
       {currentScreen === 'home' && (
-        <div className="bottom-navbar-wrapper">
+        <div className={`bottom-navbar-wrapper ${isNavbarVisible ? 'visible' : 'hidden'}`}>
           <nav className="bottom-navbar">
             <div
               className={`nav-pill ${activeNavTab === 0 ? 'active' : ''}`}
