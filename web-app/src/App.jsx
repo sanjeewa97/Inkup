@@ -127,7 +127,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Bill Book Estimator Form State
-  const [selectedBookCategory, setSelectedBookCategory] = useState('Billbook');
+  const [selectedBookCategory, setSelectedBookCategory] = useState('Bill book');
   const [customSizes, setCustomSizes] = useState([]);
   const [selectedSize, setSelectedSize] = useState('A4 size');
   const [printingMethod, setPrintingMethod] = useState('Offset Printing'); // 'Offset Printing' or 'Duplo Printing'
@@ -712,7 +712,7 @@ export default function App() {
 
           {/* BOOK CATEGORY SELECTION BAR (In the marked area below subscreen header) */}
           <div className="book-category-bar">
-            {['Billbook', 'Pad book', 'Letter head books', 'Pass books', 'Other books'].map((cat) => (
+            {['Bill book', 'Pad book', 'Letter head books', 'Pass books', 'Other books'].map((cat) => (
               <button
                 key={cat}
                 type="button"
