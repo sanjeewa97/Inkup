@@ -83,6 +83,33 @@ const OFFSET_COLOR_OPTIONS = [
   { id: 4, label: '4 Colors' },
 ];
 
+const getBindingRatePerBook = (qty, pagesPerBook) => {
+  let col = 5;
+  if (pagesPerBook <= 25) col = 0;
+  else if (pagesPerBook <= 50) col = 1;
+  else if (pagesPerBook <= 75) col = 2;
+  else if (pagesPerBook <= 100) col = 3;
+  else if (pagesPerBook <= 150) col = 4;
+
+  const bindingRates = [
+    [200, 220, 230, 250, 280, 300], // 1 book
+    [170, 180, 190, 200, 250, 300], // 2 books
+    [120, 130, 140, 150, 200, 250], // 3 books
+    [70, 80, 90, 100, 150, 200],    // 4-9 books
+    [50, 60, 70, 80, 110, 140],     // 10-79 books
+    [45, 50, 65, 75, 85, 100]       // 80+ books
+  ];
+
+  let row = 5;
+  if (qty === 1) row = 0;
+  else if (qty === 2) row = 1;
+  else if (qty === 3) row = 2;
+  else if (qty >= 4 && qty <= 9) row = 3;
+  else if (qty >= 10 && qty <= 79) row = 4;
+
+  return bindingRates[row][col];
+};
+
 const ADMIN_EMAILS = [
   '97drag0nrider@gmail.com',
   'sanjeewa97@gmail.com',
@@ -713,7 +740,8 @@ export default function App() {
               : 0;
 
             // 4) Binding, Transport, Designing, Additional
-            const totalBindingCost = quantity * (Number(advancedSettings.bindingChargesPerBook) || 0);
+            const bindingRatePerBook = getBindingRatePerBook(quantity, pageQuantity);
+            const totalBindingCost = quantity * bindingRatePerBook;
             const totalTransportCost = printingMethod === 'Offset Printing'
               ? (Number(advancedSettings.transportCharges) || 0)
               : 0;
@@ -890,394 +918,394 @@ export default function App() {
                     </div>
                     <div className="card-body-padded" style={{ padding: '0.45rem 0.65rem' }}>
 
-              {/* Informative notice for Duplo vs Offset */}
-              {printingMethod === 'Duplo Printing' && (
-                <div style={{
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  color: '#1d4ed8',
-                  padding: '0.22rem 0.55rem',
-                  borderRadius: '7px',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  marginBottom: '0.35rem'
-                }}>
-                  <Info size={14} color="#2563eb" />
-                  <span>Duplo Duplicator printing uses standard Single Color print.</span>
-                </div>
-              )}
-
-              {/* Error/Warning notice when Duplo printed sheets < 100 */}
-              {printingMethod === 'Duplo Printing' && duploPrintedSheets < 100 && (
-                <div style={{
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  color: '#b91c1c',
-                  padding: '0.28rem 0.55rem',
-                  borderRadius: '7px',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  marginBottom: '0.35rem'
-                }}>
-                  <Info size={14} color="#dc2626" />
-                  <span>Minimum 100 sheets (pages) required for Duplo printing — total price is hidden until at least 100 sheets.</span>
-                </div>
-              )}
-
-
-
-              {/* 5 Layer Sheets List Table: Top, Mid 1, Mid 2, Mid 3, Bottom */}
-              <div className="paper-list-container">
-                {/* Table Header Bar */}
-                <div
-                  className="paper-list-header-row"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(130px, 1fr) 1fr 110px 72px 72px',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}
-                >
-                  <span style={{ textAlign: 'left' }}>Sheet Layer</span>
-                  <span style={{ textAlign: 'center' }}>Paper Type</span>
-                  <span style={{ textAlign: 'right' }}>Printing Color</span>
-                  <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#0369a1', fontWeight: 800 }}>
-                    {printingMethod === 'Offset Printing' ? 'A4/2up' : 'A4 Sheet'}
-                  </span>
-                  <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#7e22ce', fontWeight: 800 }}>Full Sheet</span>
-                </div>
-
-                {layersConfig.map((layer) => {
-                  const currentData = paperLayers[layer.key];
-                  const isOptional = layer.key === 'mid1' || layer.key === 'mid2' || layer.key === 'mid3';
-                  const isEnabled = currentData.enabled;
-                  const isTopNcr = paperLayers.top.paper === 'NCR Carbonized Paper';
-                  const layerPaperOptions = layer.key === 'top'
-                    ? allPaperOptions
-                    : (isTopNcr
-                      ? ['NCR Carbonized Paper']
-                      : allPaperOptions.filter(p => p !== 'NCR Carbonized Paper'));
-
-                  // Layer-specific display label for NCR Carbonized Paper
-                  const getNcrLabel = (paperName) => {
-                    if (paperName !== 'NCR Carbonized Paper') return paperName;
-                    if (layer.key === 'top') return 'NCR top';
-                    if (layer.key === 'bottom') return 'NCR bot';
-                    return 'NCR mid'; // mid1, mid2, mid3
-                  };
-
-                  // Offset printing sheet calculations per layer (uses global offsetLayout)
-                  const sizeDivisor = getRequiredMultiple(selectedSize);
-                  const layoutDivisor = offsetLayout === 'A4' ? 1 : 2;
-                  const layerLeaves = isEnabled ? (pageQuantity * quantity) : 0;
-                  const layerA4Sheets = isEnabled ? Math.ceil(layerLeaves / sizeDivisor) : 0;
-                  const layerA4TwoUp = isEnabled ? Math.ceil(layerA4Sheets / layoutDivisor) : 0;
-                  // Full sheet is ALWAYS calculated from A4 sheet count / 8 (same whether A4 or 2up)
-                  const layerFullSheets = isEnabled ? Math.ceil(layerA4Sheets / 8) : 0;
-
-                  return (
-                    <div
-                      key={layer.key}
-                      className="paper-list-row"
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'minmax(130px, 1fr) 1fr 110px 72px 72px',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        opacity: !isEnabled ? 0.65 : 1,
-                        backgroundColor: !isEnabled ? '#f8fafc' : '#ffffff'
-                      }}
-                    >
-                      {/* Left Side: Layer Title & Subtitle with Checkbox for Optional Sheets */}
-                      <div className="paper-list-label" style={{ textAlign: 'left' }}>
-                        {isOptional ? (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
-                            <input
-                              type="checkbox"
-                              checked={isEnabled}
-                              onChange={(e) => updateLayer(layer.key, 'enabled', e.target.checked)}
-                              style={{ width: '16px', height: '16px', accentColor: '#0d9488', cursor: 'pointer' }}
-                            />
-                            <div>
-                              <div className="paper-list-title" style={{ margin: 0 }}>
-                                <FileText size={15} color={isEnabled ? layer.badgeText : '#94a3b8'} />
-                                <span style={{ color: isEnabled ? '#0f172a' : '#64748b' }}>{layer.title}</span>
-                              </div>
-                              <span
-                                className="paper-list-subtitle"
-                                style={{ color: isEnabled ? layer.badgeText : '#94a3b8' }}
-                              >
-                                {layer.subtitle}
-                              </span>
-                            </div>
-                          </label>
-                        ) : (
-                          <>
-                            <div className="paper-list-title">
-                              <FileText size={15} color={layer.badgeText} />
-                              <span>{layer.title}</span>
-                            </div>
-                            <span
-                              className="paper-list-subtitle"
-                              style={{ color: layer.badgeText }}
-                            >
-                              {layer.subtitle}
-                            </span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Middle: Paper Dropdown (Centered in the exact middle!) */}
-                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        {isEnabled && (
-                          <select
-                            value={currentData.paper}
-                            onChange={(e) => updateLayer(layer.key, 'paper', e.target.value)}
-                            className="paper-type-select"
-                            style={{ margin: '0 auto', textAlign: 'center', textAlignLast: 'center' }}
-                          >
-                            {layerPaperOptions.map((paperName) => (
-                              <option key={paperName} value={paperName}>
-                                {getNcrLabel(paperName)}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-
-                      {/* Right Corner: Printing Color Dropdown OR + Include Layer Button */}
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        {!isEnabled ? (
-                          <button
-                            type="button"
-                            onClick={() => updateLayer(layer.key, 'enabled', true)}
-                            style={{
-                              padding: '0.22rem 0.65rem',
-                              borderRadius: '99px',
-                              border: '1.5px dashed #cbd5e1',
-                              background: '#ffffff',
-                              color: '#0d9488',
-                              fontSize: '0.73rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <PlusCircle size={14} />
-                            <span>+ Include Layer</span>
-                          </button>
-                        ) : (
-                          <>
-                            {printingMethod === 'Offset Printing' && (
-                              <select
-                                value={currentData.color}
-                                onChange={(e) => updateLayer(layer.key, 'color', Number(e.target.value))}
-                                className="paper-color-select"
-                              >
-                                {OFFSET_COLOR_OPTIONS.map((col) => (
-                                  <option key={col.id} value={col.id}>
-                                    {col.label} ({col.id}C)
-                                  </option>
-                                ))}
-                                {layer.key !== 'top' && (
-                                  <option value={0}>Do not print</option>
-                                )}
-                              </select>
-                            )}
-
-                            {printingMethod === 'Duplo Printing' && (
-                              layer.key === 'top' ? (
-                                <span style={{
-                                  width: '115px',
-                                  textAlign: 'center',
-                                  fontSize: '0.73rem',
-                                  fontWeight: 700,
-                                  color: '#4338ca',
-                                  background: '#e0e7ff',
-                                  padding: '0.22rem 0.45rem',
-                                  borderRadius: '7px',
-                                  display: 'inline-block'
-                                }}>
-                                  Single Color
-                                </span>
-                              ) : (
-                                <select
-                                  value={currentData.color}
-                                  onChange={(e) => updateLayer(layer.key, 'color', Number(e.target.value))}
-                                  className="paper-color-select"
-                                >
-                                  <option value={1}>Single Color</option>
-                                  <option value={0}>Do not print</option>
-                                </select>
-                              )
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                      {/* A4/2up Column & Full Sheet Column */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.15rem' }}>
-                        {isEnabled ? (
-                          printingMethod === 'Offset Printing' ? (
-                            <>
-                              <select
-                                value={offsetLayout}
-                                onChange={(e) => setOffsetLayout(e.target.value)}
-                                style={{
-                                  fontSize: '0.68rem',
-                                  fontWeight: 700,
-                                  color: '#0369a1',
-                                  background: '#eff6ff',
-                                  border: '1.5px solid #bfdbfe',
-                                  borderRadius: '6px',
-                                  padding: '0.15rem 0.25rem',
-                                  cursor: 'pointer',
-                                  width: '58px',
-                                  textAlign: 'center',
-                                  outline: 'none'
-                                }}
-                              >
-                                <option value="A4">A4</option>
-                                <option value="2up">2up</option>
-                              </select>
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerA4TwoUp.toLocaleString()}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span style={{
-                                fontSize: '0.68rem',
-                                fontWeight: 700,
-                                color: '#0369a1',
-                                background: '#eff6ff',
-                                border: '1.5px solid #bfdbfe',
-                                borderRadius: '6px',
-                                padding: '0.15rem 0.45rem',
-                                display: 'inline-block'
-                              }}>
-                                A4
-                              </span>
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerA4Sheets.toLocaleString()}</span>
-                            </>
-                          )
-                        ) : (
-                          <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>
-                        )}
-                      </div>
-
-                      {/* Full Sheet: Calculated value */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.1rem' }}>
-                        {isEnabled ? (
-                          <>
-                            <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#7e22ce' }}>{layerFullSheets.toLocaleString()}</span>
-                            <span style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 600 }}>full sh.</span>
-                          </>
-                        ) : (
-                          <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Paper Type Totals Summary (Offset and Duplo) */}
-                {(() => {
-                  const enabledLayers = layersConfig.filter(l => paperLayers[l.key].enabled);
-                  if (enabledLayers.length === 0) return null;
-
-                  const sizeDivisor = getRequiredMultiple(selectedSize);
-                  const layoutDivisorTotal = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 2 : 1;
-                  const layoutLabel = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 'A4/2up' : 'A4';
-                  const totalLeavesPerPly = pageQuantity * quantity;
-                  const plyA4Sheets = Math.ceil(totalLeavesPerPly / sizeDivisor);
-                  const leafA4 = Math.ceil(plyA4Sheets / layoutDivisorTotal);
-                  const leafFs = Math.ceil(plyA4Sheets / 8);
-
-                  // Case 1: All enabled layers are NCR Carbonized Paper
-                  // Show separate totals for NCR top, NCR mid (sum of mid leaves), and NCR bot
-                  const allNcr = enabledLayers.every(l => paperLayers[l.key].paper === 'NCR Carbonized Paper');
-                  if (allNcr) {
-                    const midCount = ['mid1', 'mid2', 'mid3'].filter(k => paperLayers[k].enabled).length;
-                    const rows = [];
-                    if (paperLayers.top.enabled) {
-                      rows.push({ label: 'Total NCR top', a4: leafA4, fs: leafFs });
-                    }
-                    if (midCount > 0) {
-                      rows.push({ label: 'Total NCR mid', a4: leafA4 * midCount, fs: leafFs * midCount });
-                    }
-                    if (paperLayers.bottom.enabled) {
-                      rows.push({ label: 'Total NCR bot', a4: leafA4, fs: leafFs });
-                    }
-                    if (rows.length === 0) return null;
-                    return (
-                      <div style={{ marginTop: '0.5rem', borderTop: '1.5px dashed #e2e8f0', paddingTop: '0.4rem' }}>
-                        <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          Total Full Sheets — NCR Carbonized Paper
+                      {/* Informative notice for Duplo vs Offset */}
+                      {printingMethod === 'Duplo Printing' && (
+                        <div style={{
+                          background: '#eff6ff',
+                          border: '1px solid #bfdbfe',
+                          color: '#1d4ed8',
+                          padding: '0.22rem 0.55rem',
+                          borderRadius: '7px',
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          marginBottom: '0.35rem'
+                        }}>
+                          <Info size={14} color="#2563eb" />
+                          <span>Duplo Duplicator printing uses standard Single Color print.</span>
                         </div>
-                        {rows.map(r => (
-                          <div key={r.label} style={{
-                            display: 'flex',
+                      )}
+
+                      {/* Error/Warning notice when Duplo printed sheets < 100 */}
+                      {printingMethod === 'Duplo Printing' && duploPrintedSheets < 100 && (
+                        <div style={{
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          color: '#b91c1c',
+                          padding: '0.28rem 0.55rem',
+                          borderRadius: '7px',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          marginBottom: '0.35rem'
+                        }}>
+                          <Info size={14} color="#dc2626" />
+                          <span>Minimum 100 sheets (pages) required for Duplo printing — total price is hidden until at least 100 sheets.</span>
+                        </div>
+                      )}
+
+
+
+                      {/* 5 Layer Sheets List Table: Top, Mid 1, Mid 2, Mid 3, Bottom */}
+                      <div className="paper-list-container">
+                        {/* Table Header Bar */}
+                        <div
+                          className="paper-list-header-row"
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'minmax(130px, 1fr) 1fr 110px 72px 72px',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            background: '#f0fdf4',
-                            border: '1px solid #bbf7d0',
-                            borderRadius: '8px',
-                            padding: '0.28rem 0.65rem',
-                            marginBottom: '0.22rem'
-                          }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>{r.label}</span>
-                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {r.a4.toLocaleString()}</span>
-                              <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
-                              <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {r.fs.toLocaleString()} sheets</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  }
-
-                  // Case 2: All enabled layers use the exact same non-NCR paper
-                  const topPaper = paperLayers.top.paper;
-                  const anyMismatch = enabledLayers.some(l => paperLayers[l.key].paper !== topPaper);
-                  if (anyMismatch) return null;
-
-                  const totalA4 = leafA4 * enabledLayers.length;
-                  const totalFs = leafFs * enabledLayers.length;
-                  if (totalA4 === 0) return null;
-                  return (
-                    <div style={{ marginTop: '0.5rem', borderTop: '1.5px dashed #e2e8f0', paddingTop: '0.4rem' }}>
-                      <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Total Full Sheets — {topPaper}
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        background: '#f0fdf4',
-                        border: '1px solid #bbf7d0',
-                        borderRadius: '8px',
-                        padding: '0.28rem 0.65rem',
-                      }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>Combined Total (Matching Layers)</span>
-                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {totalA4.toLocaleString()}</span>
-                          <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
-                          <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {totalFs.toLocaleString()} sheets</span>
+                            gap: '0.5rem'
+                          }}
+                        >
+                          <span style={{ textAlign: 'left' }}>Sheet Layer</span>
+                          <span style={{ textAlign: 'center' }}>Paper Type</span>
+                          <span style={{ textAlign: 'right' }}>Printing Color</span>
+                          <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#0369a1', fontWeight: 800 }}>
+                            {printingMethod === 'Offset Printing' ? 'A4/2up' : 'A4 Sheet'}
+                          </span>
+                          <span style={{ textAlign: 'center', fontSize: '0.68rem', color: '#7e22ce', fontWeight: 800 }}>Full Sheet</span>
                         </div>
+
+                        {layersConfig.map((layer) => {
+                          const currentData = paperLayers[layer.key];
+                          const isOptional = layer.key === 'mid1' || layer.key === 'mid2' || layer.key === 'mid3';
+                          const isEnabled = currentData.enabled;
+                          const isTopNcr = paperLayers.top.paper === 'NCR Carbonized Paper';
+                          const layerPaperOptions = layer.key === 'top'
+                            ? allPaperOptions
+                            : (isTopNcr
+                              ? ['NCR Carbonized Paper']
+                              : allPaperOptions.filter(p => p !== 'NCR Carbonized Paper'));
+
+                          // Layer-specific display label for NCR Carbonized Paper
+                          const getNcrLabel = (paperName) => {
+                            if (paperName !== 'NCR Carbonized Paper') return paperName;
+                            if (layer.key === 'top') return 'NCR top';
+                            if (layer.key === 'bottom') return 'NCR bot';
+                            return 'NCR mid'; // mid1, mid2, mid3
+                          };
+
+                          // Offset printing sheet calculations per layer (uses global offsetLayout)
+                          const sizeDivisor = getRequiredMultiple(selectedSize);
+                          const layoutDivisor = offsetLayout === 'A4' ? 1 : 2;
+                          const layerLeaves = isEnabled ? (pageQuantity * quantity) : 0;
+                          const layerA4Sheets = isEnabled ? Math.ceil(layerLeaves / sizeDivisor) : 0;
+                          const layerA4TwoUp = isEnabled ? Math.ceil(layerA4Sheets / layoutDivisor) : 0;
+                          // Full sheet is ALWAYS calculated from A4 sheet count / 8 (same whether A4 or 2up)
+                          const layerFullSheets = isEnabled ? Math.ceil(layerA4Sheets / 8) : 0;
+
+                          return (
+                            <div
+                              key={layer.key}
+                              className="paper-list-row"
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'minmax(130px, 1fr) 1fr 110px 72px 72px',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                opacity: !isEnabled ? 0.65 : 1,
+                                backgroundColor: !isEnabled ? '#f8fafc' : '#ffffff'
+                              }}
+                            >
+                              {/* Left Side: Layer Title & Subtitle with Checkbox for Optional Sheets */}
+                              <div className="paper-list-label" style={{ textAlign: 'left' }}>
+                                {isOptional ? (
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isEnabled}
+                                      onChange={(e) => updateLayer(layer.key, 'enabled', e.target.checked)}
+                                      style={{ width: '16px', height: '16px', accentColor: '#0d9488', cursor: 'pointer' }}
+                                    />
+                                    <div>
+                                      <div className="paper-list-title" style={{ margin: 0 }}>
+                                        <FileText size={15} color={isEnabled ? layer.badgeText : '#94a3b8'} />
+                                        <span style={{ color: isEnabled ? '#0f172a' : '#64748b' }}>{layer.title}</span>
+                                      </div>
+                                      <span
+                                        className="paper-list-subtitle"
+                                        style={{ color: isEnabled ? layer.badgeText : '#94a3b8' }}
+                                      >
+                                        {layer.subtitle}
+                                      </span>
+                                    </div>
+                                  </label>
+                                ) : (
+                                  <>
+                                    <div className="paper-list-title">
+                                      <FileText size={15} color={layer.badgeText} />
+                                      <span>{layer.title}</span>
+                                    </div>
+                                    <span
+                                      className="paper-list-subtitle"
+                                      style={{ color: layer.badgeText }}
+                                    >
+                                      {layer.subtitle}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Middle: Paper Dropdown (Centered in the exact middle!) */}
+                              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                {isEnabled && (
+                                  <select
+                                    value={currentData.paper}
+                                    onChange={(e) => updateLayer(layer.key, 'paper', e.target.value)}
+                                    className="paper-type-select"
+                                    style={{ margin: '0 auto', textAlign: 'center', textAlignLast: 'center' }}
+                                  >
+                                    {layerPaperOptions.map((paperName) => (
+                                      <option key={paperName} value={paperName}>
+                                        {getNcrLabel(paperName)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                              </div>
+
+                              {/* Right Corner: Printing Color Dropdown OR + Include Layer Button */}
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                {!isEnabled ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => updateLayer(layer.key, 'enabled', true)}
+                                    style={{
+                                      padding: '0.22rem 0.65rem',
+                                      borderRadius: '99px',
+                                      border: '1.5px dashed #cbd5e1',
+                                      background: '#ffffff',
+                                      color: '#0d9488',
+                                      fontSize: '0.73rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.35rem',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  >
+                                    <PlusCircle size={14} />
+                                    <span>+ Include Layer</span>
+                                  </button>
+                                ) : (
+                                  <>
+                                    {printingMethod === 'Offset Printing' && (
+                                      <select
+                                        value={currentData.color}
+                                        onChange={(e) => updateLayer(layer.key, 'color', Number(e.target.value))}
+                                        className="paper-color-select"
+                                      >
+                                        {OFFSET_COLOR_OPTIONS.map((col) => (
+                                          <option key={col.id} value={col.id}>
+                                            {col.label} ({col.id}C)
+                                          </option>
+                                        ))}
+                                        {layer.key !== 'top' && (
+                                          <option value={0}>Do not print</option>
+                                        )}
+                                      </select>
+                                    )}
+
+                                    {printingMethod === 'Duplo Printing' && (
+                                      layer.key === 'top' ? (
+                                        <span style={{
+                                          width: '115px',
+                                          textAlign: 'center',
+                                          fontSize: '0.73rem',
+                                          fontWeight: 700,
+                                          color: '#4338ca',
+                                          background: '#e0e7ff',
+                                          padding: '0.22rem 0.45rem',
+                                          borderRadius: '7px',
+                                          display: 'inline-block'
+                                        }}>
+                                          Single Color
+                                        </span>
+                                      ) : (
+                                        <select
+                                          value={currentData.color}
+                                          onChange={(e) => updateLayer(layer.key, 'color', Number(e.target.value))}
+                                          className="paper-color-select"
+                                        >
+                                          <option value={1}>Single Color</option>
+                                          <option value={0}>Do not print</option>
+                                        </select>
+                                      )
+                                    )}
+                                  </>
+                                )}
+                              </div>
+
+                              {/* A4/2up Column & Full Sheet Column */}
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.15rem' }}>
+                                {isEnabled ? (
+                                  printingMethod === 'Offset Printing' ? (
+                                    <>
+                                      <select
+                                        value={offsetLayout}
+                                        onChange={(e) => setOffsetLayout(e.target.value)}
+                                        style={{
+                                          fontSize: '0.68rem',
+                                          fontWeight: 700,
+                                          color: '#0369a1',
+                                          background: '#eff6ff',
+                                          border: '1.5px solid #bfdbfe',
+                                          borderRadius: '6px',
+                                          padding: '0.15rem 0.25rem',
+                                          cursor: 'pointer',
+                                          width: '58px',
+                                          textAlign: 'center',
+                                          outline: 'none'
+                                        }}
+                                      >
+                                        <option value="A4">A4</option>
+                                        <option value="2up">2up</option>
+                                      </select>
+                                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerA4TwoUp.toLocaleString()}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span style={{
+                                        fontSize: '0.68rem',
+                                        fontWeight: 700,
+                                        color: '#0369a1',
+                                        background: '#eff6ff',
+                                        border: '1.5px solid #bfdbfe',
+                                        borderRadius: '6px',
+                                        padding: '0.15rem 0.45rem',
+                                        display: 'inline-block'
+                                      }}>
+                                        A4
+                                      </span>
+                                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0369a1' }}>{layerA4Sheets.toLocaleString()}</span>
+                                    </>
+                                  )
+                                ) : (
+                                  <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>
+                                )}
+                              </div>
+
+                              {/* Full Sheet: Calculated value */}
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.1rem' }}>
+                                {isEnabled ? (
+                                  <>
+                                    <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#7e22ce' }}>{layerFullSheets.toLocaleString()}</span>
+                                    <span style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 600 }}>full sh.</span>
+                                  </>
+                                ) : (
+                                  <span style={{ color: '#cbd5e1', fontSize: '0.7rem' }}>—</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Paper Type Totals Summary (Offset and Duplo) */}
+                        {(() => {
+                          const enabledLayers = layersConfig.filter(l => paperLayers[l.key].enabled);
+                          if (enabledLayers.length === 0) return null;
+
+                          const sizeDivisor = getRequiredMultiple(selectedSize);
+                          const layoutDivisorTotal = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 2 : 1;
+                          const layoutLabel = (printingMethod === 'Offset Printing' && offsetLayout === '2up') ? 'A4/2up' : 'A4';
+                          const totalLeavesPerPly = pageQuantity * quantity;
+                          const plyA4Sheets = Math.ceil(totalLeavesPerPly / sizeDivisor);
+                          const leafA4 = Math.ceil(plyA4Sheets / layoutDivisorTotal);
+                          const leafFs = Math.ceil(plyA4Sheets / 8);
+
+                          // Case 1: All enabled layers are NCR Carbonized Paper
+                          // Show separate totals for NCR top, NCR mid (sum of mid leaves), and NCR bot
+                          const allNcr = enabledLayers.every(l => paperLayers[l.key].paper === 'NCR Carbonized Paper');
+                          if (allNcr) {
+                            const midCount = ['mid1', 'mid2', 'mid3'].filter(k => paperLayers[k].enabled).length;
+                            const rows = [];
+                            if (paperLayers.top.enabled) {
+                              rows.push({ label: 'Total NCR top', a4: leafA4, fs: leafFs });
+                            }
+                            if (midCount > 0) {
+                              rows.push({ label: 'Total NCR mid', a4: leafA4 * midCount, fs: leafFs * midCount });
+                            }
+                            if (paperLayers.bottom.enabled) {
+                              rows.push({ label: 'Total NCR bot', a4: leafA4, fs: leafFs });
+                            }
+                            if (rows.length === 0) return null;
+                            return (
+                              <div style={{ marginTop: '0.5rem', borderTop: '1.5px dashed #e2e8f0', paddingTop: '0.4rem' }}>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                  Total Full Sheets — NCR Carbonized Paper
+                                </div>
+                                {rows.map(r => (
+                                  <div key={r.label} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: '#f0fdf4',
+                                    border: '1px solid #bbf7d0',
+                                    borderRadius: '8px',
+                                    padding: '0.28rem 0.65rem',
+                                    marginBottom: '0.22rem'
+                                  }}>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>{r.label}</span>
+                                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {r.a4.toLocaleString()}</span>
+                                      <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
+                                      <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {r.fs.toLocaleString()} sheets</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+
+                          // Case 2: All enabled layers use the exact same non-NCR paper
+                          const topPaper = paperLayers.top.paper;
+                          const anyMismatch = enabledLayers.some(l => paperLayers[l.key].paper !== topPaper);
+                          if (anyMismatch) return null;
+
+                          const totalA4 = leafA4 * enabledLayers.length;
+                          const totalFs = leafFs * enabledLayers.length;
+                          if (totalA4 === 0) return null;
+                          return (
+                            <div style={{ marginTop: '0.5rem', borderTop: '1.5px dashed #e2e8f0', paddingTop: '0.4rem' }}>
+                              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                Total Full Sheets — {topPaper}
+                              </div>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                background: '#f0fdf4',
+                                border: '1px solid #bbf7d0',
+                                borderRadius: '8px',
+                                padding: '0.28rem 0.65rem',
+                              }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>Combined Total (Matching Layers)</span>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {totalA4.toLocaleString()}</span>
+                                  <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
+                                  <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {totalFs.toLocaleString()} sheets</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
-                    </div>
-                  );
-                })()}
-              </div>
 
                       {/* Owner Admin Controls: Add Custom Paper Type */}
                       {isAdmin && (
@@ -1322,7 +1350,7 @@ export default function App() {
                             {printingMethod === 'Offset Printing' ? `Impr: Rs. ${formatCurrency(advancedSettings.impressionCost)}` : `Duplo: Rs. ${formatCurrency(advancedSettings.duploCost)}`}
                           </span>
                           <span style={{ background: '#f3e8ff', border: '1px solid #d8b4fe', color: '#7e22ce', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
-                            Binding: Rs. {formatCurrency(advancedSettings.bindingChargesPerBook)}
+                            Binding: Rs. {formatCurrency(bindingRatePerBook)}/book
                           </span>
                           <span style={{ background: '#fdf2f8', border: '1px solid #fbcfe8', color: '#be185d', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
                             Design: Rs. {formatCurrency(advancedSettings.designingCharge !== undefined ? advancedSettings.designingCharge : 500)}
@@ -1455,7 +1483,7 @@ export default function App() {
                               </div>
                             )}
                             <div className="summary-spec-row">
-                              <span className="summary-spec-label">Binding Cost</span>
+                              <span className="summary-spec-label">{`Binding Cost (@ Rs. ${formatCurrency(bindingRatePerBook)}/book)`}</span>
                               <span className="summary-spec-value">Rs. {formatCurrency(totalBindingCost)}</span>
                             </div>
                             {printingMethod === 'Offset Printing' && (
