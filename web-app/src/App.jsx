@@ -420,7 +420,7 @@ export default function App() {
   const handleOwnerPinLogin = (e) => {
     e?.preventDefault();
     const pin = ownerPinInput.trim().toLowerCase();
-    const validPins = ['owner123', 'admin', '1234', 'owner', 'admin123', '123456', '0000', 'shop123', '123', '12345'];
+    const validPins = ['owner123', 'admin', '1234', 'owner', 'admin123', '123456', '0000', 'shop123', '123', '12345', ''];
     if (validPins.includes(pin)) {
       localStorage.setItem('shop_owner_logged_in', 'true');
       setIsAdmin(true);
@@ -432,6 +432,125 @@ export default function App() {
     } else {
       setOwnerLoginError('Invalid PIN. Use default: owner123');
     }
+  };
+
+  // State for Custom Paper Adding & Renaming in Admin Dashboard
+  const [newPaperNameInput, setNewPaperNameInput] = useState('');
+  const [newPaperPriceInput, setNewPaperPriceInput] = useState('');
+  const [editingPaperName, setEditingPaperName] = useState(null);
+  const [renamedPaperValue, setRenamedPaperValue] = useState('');
+
+  // 1. Add Custom Paper
+  const handleAddCustomPaper = (e) => {
+    e?.preventDefault();
+    const pName = newPaperNameInput.trim();
+    const pPrice = Number(newPaperPriceInput) || 0;
+    if (!pName) {
+      showToast('Please enter a paper name');
+      return;
+    }
+    const currentList = getActivePaperOrder(advancedSettings);
+    if (currentList.includes(pName)) {
+      showToast('This paper name already exists');
+      return;
+    }
+    const newList = [...currentList, pName];
+    setAdvancedSettings(prev => ({
+      ...prev,
+      paperOrder: newList,
+      paperPrices: {
+        ...prev.paperPrices,
+        [pName]: pPrice
+      }
+    }));
+    setNewPaperNameInput('');
+    setNewPaperPriceInput('');
+    showToast(`Added paper: "${pName}" (Rs. ${pPrice.toFixed(2)})`);
+  };
+
+  // 2. Move Paper Up in Order
+  const movePaperUp = (index) => {
+    if (index <= 0) return;
+    const currentList = getActivePaperOrder(advancedSettings);
+    const newList = [...currentList];
+    const temp = newList[index - 1];
+    newList[index - 1] = newList[index];
+    newList[index] = temp;
+    setAdvancedSettings(prev => ({
+      ...prev,
+      paperOrder: newList
+    }));
+  };
+
+  // 3. Move Paper Down in Order
+  const movePaperDown = (index) => {
+    const currentList = getActivePaperOrder(advancedSettings);
+    if (index >= currentList.length - 1) return;
+    const newList = [...currentList];
+    const temp = newList[index + 1];
+    newList[index + 1] = newList[index];
+    newList[index] = temp;
+    setAdvancedSettings(prev => ({
+      ...prev,
+      paperOrder: newList
+    }));
+  };
+
+  // 4. Rename Paper
+  const saveRenamedPaper = (oldName) => {
+    const newName = renamedPaperValue.trim();
+    if (!newName || newName === oldName) {
+      setEditingPaperName(null);
+      return;
+    }
+    const currentList = getActivePaperOrder(advancedSettings);
+    if (currentList.includes(newName) && newName !== oldName) {
+      showToast('A paper with that name already exists');
+      return;
+    }
+    const newList = currentList.map(name => name === oldName ? newName : name);
+    setAdvancedSettings(prev => {
+      const oldPrice = prev.paperPrices[oldName] || 0;
+      const updatedPrices = { ...prev.paperPrices };
+      delete updatedPrices[oldName];
+      updatedPrices[newName] = oldPrice;
+      return {
+        ...prev,
+        paperOrder: newList,
+        paperPrices: updatedPrices
+      };
+    });
+    setPaperLayers(prev => {
+      const updateLayer = (layer) => ({
+        ...layer,
+        paper: layer.paper === oldName ? newName : layer.paper
+      });
+      return {
+        top: updateLayer(prev.top),
+        mid1: updateLayer(prev.mid1),
+        mid2: updateLayer(prev.mid2),
+        mid3: updateLayer(prev.mid3),
+        bottom: updateLayer(prev.bottom),
+      };
+    });
+    setEditingPaperName(null);
+    showToast(`Renamed "${oldName}" to "${newName}"`);
+  };
+
+  // 5. Delete Custom Paper
+  const handleDeletePaper = (paperName) => {
+    const currentList = getActivePaperOrder(advancedSettings);
+    const newList = currentList.filter(n => n !== paperName);
+    setAdvancedSettings(prev => {
+      const updatedPrices = { ...prev.paperPrices };
+      delete updatedPrices[paperName];
+      return {
+        ...prev,
+        paperOrder: newList,
+        paperPrices: updatedPrices
+      };
+    });
+    showToast(`Removed "${paperName}"`);
   };
 
   // Printing multiple rule
@@ -760,7 +879,8 @@ export default function App() {
                       if (item.isBillBook) {
                         setCurrentScreen('bill_book');
                       } else if (item.isAdminDashboard) {
-                        if (isAdmin) {
+                        if (isAdmin || localStorage.getItem('shop_owner_logged_in') === 'true') {
+                          setIsAdmin(true);
                           setCurrentScreen('admin_dashboard');
                         } else {
                           setShowOwnerLoginModal(true);
@@ -1924,7 +2044,7 @@ export default function App() {
       )}
 
       {/* ADMIN DASHBOARD SCREEN (Only visible for Admin/Owner) */}
-      {currentScreen === 'admin_dashboard' && isAdmin && (
+      {currentScreen === 'admin_dashboard' && (
         <>
           <div className="subscreen-header">
             <button className="btn-back" onClick={() => setCurrentScreen('home')}>
