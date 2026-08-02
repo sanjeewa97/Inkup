@@ -809,7 +809,7 @@ export default function App() {
                       <Layers size={18} />
                     </div>
                     <div className="card-body-padded">
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem', alignItems: 'flex-start' }}>
+                      <div className="card1-grid">
                         {/* Column 1: Paper Size */}
                         <div>
                           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.35rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -912,7 +912,7 @@ export default function App() {
                       <Printer size={18} />
                     </div>
                     <div className="card-body-padded">
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                      <div className="card2-grid">
                         {PRINTING_METHODS.map((method) => {
                           const isSelected = printingMethod === method.name;
                           const IconComp = method.icon;
