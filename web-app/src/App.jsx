@@ -775,13 +775,9 @@ export default function App() {
               : duploPrintedSheets * (Number(advancedSettings.duploCost) || 0);
             const basePrintCostPerSheet = totalPrintedSheets > 0 ? totalPrintingCost / totalPrintedSheets : 0;
 
-            // 3) Plate Price (grouped by distinct color rating so layers with same color share plates)
-            const plateUnits = Object.keys(sheetsByColor).reduce((sum, colorVal) => {
-              const c = Number(colorVal) || 0;
-              if (c === 0) return sum;
-              if (c <= 2) return sum + 1;
-              return sum + 2;
-            }, 0);
+            // 3) Plate Price (1 unit = 1300 when same color selected across layers; 2 units = 2600 when colors differ)
+            const uniqueColors = Object.keys(sheetsByColor);
+            const plateUnits = uniqueColors.length === 0 ? 0 : (uniqueColors.length === 1 ? 1 : 2);
             const totalPlateCost = printingMethod === 'Offset Printing'
               ? plateUnits * (Number(advancedSettings.platePrice) || 0)
               : 0;
