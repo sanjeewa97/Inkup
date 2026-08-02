@@ -98,10 +98,6 @@ const DEFAULT_PAPERS = [
   { name: 'Dimai Papers', tag: 'Dimai', desc: 'Dimai standard paper' },
   { name: '80 GSM Dark colour', tag: 'Colour Sheet', desc: '80gsm dark colour paper' },
   { name: '80 GSM Light colour', tag: 'Colour Sheet', desc: '80gsm light colour paper' },
-  { name: 'NCR Carbonized Paper', tag: 'CB / CFB / CF', desc: 'Carbonized set' },
-  { name: 'Paper bank 60 GSM', tag: 'Standard Sheet', desc: 'Standard ledger sheet' },
-  { name: 'Bond paper 80 GSM', tag: 'Premium Heavy', desc: 'High-end letterhead feel' },
-  { name: 'Normal print 50 GSM', tag: 'Economical', desc: 'Quick receipt sheet' },
 ];
 
 const INTERNAL_PAPER_ALIASES = [
@@ -191,11 +187,11 @@ export default function App() {
   // Step 4: Paper Layers & Colors State (Top, Mid 1, Mid 2, Mid 3, Bottom)
   const [customPapers, setCustomPapers] = useState([]);
   const [paperLayers, setPaperLayers] = useState({
-    top: { enabled: true, paper: 'NCR Carbonized Paper', color: 1 },
-    mid1: { enabled: false, paper: 'NCR Carbonized Paper', color: 1 },
-    mid2: { enabled: false, paper: 'NCR Carbonized Paper', color: 1 },
-    mid3: { enabled: false, paper: 'NCR Carbonized Paper', color: 1 },
-    bottom: { enabled: true, paper: 'NCR Carbonized Paper', color: 1 },
+    top: { enabled: true, paper: 'Carbonized Top', color: 1 },
+    mid1: { enabled: false, paper: 'Carbonized Mid', color: 1 },
+    mid2: { enabled: false, paper: 'Carbonized Mid', color: 1 },
+    mid3: { enabled: false, paper: 'Carbonized Mid', color: 1 },
+    bottom: { enabled: true, paper: 'Carbonized Bot', color: 1 },
   });
 
   // Modal State for Add Custom Size or Custom Paper
@@ -605,11 +601,11 @@ export default function App() {
     setQuantity(1);
     setPageQuantity(50);
     setPaperLayers({
-      top: { enabled: true, paper: 'NCR Carbonized Paper', color: 1 },
-      mid1: { enabled: false, paper: 'NCR Carbonized Paper', color: 1 },
-      mid2: { enabled: false, paper: 'NCR Carbonized Paper', color: 1 },
-      mid3: { enabled: false, paper: 'NCR Carbonized Paper', color: 1 },
-      bottom: { enabled: true, paper: 'NCR Carbonized Paper', color: 1 },
+      top: { enabled: true, paper: 'Carbonized Top', color: 1 },
+      mid1: { enabled: false, paper: 'Carbonized Mid', color: 1 },
+      mid2: { enabled: false, paper: 'Carbonized Mid', color: 1 },
+      mid3: { enabled: false, paper: 'Carbonized Mid', color: 1 },
+      bottom: { enabled: true, paper: 'Carbonized Bot', color: 1 },
     });
     setAdvancedSettings(getInitialAdvancedSettings());
     showToast('Reset all specifications to default');
@@ -673,34 +669,6 @@ export default function App() {
 
   // Update a specific layer's paper, color, or enabled
   const updateLayer = (layerKey, field, value) => {
-    if (layerKey === 'top' && field === 'paper') {
-      if (value === 'NCR Carbonized Paper') {
-        setPaperLayers(prev => ({
-          top: { ...prev.top, paper: 'NCR Carbonized Paper' },
-          mid1: { ...prev.mid1, paper: 'NCR Carbonized Paper' },
-          mid2: { ...prev.mid2, paper: 'NCR Carbonized Paper' },
-          mid3: { ...prev.mid3, paper: 'NCR Carbonized Paper' },
-          bottom: { ...prev.bottom, paper: 'NCR Carbonized Paper' },
-        }));
-        showToast('All sheets locked to NCR Carbonized Paper');
-        return;
-      } else {
-        setPaperLayers(prev => {
-          const sanitizePaper = (currentPaper) =>
-            currentPaper === 'NCR Carbonized Paper' ? (value === 'Choose paper type' ? 'Choose paper type' : value) : currentPaper;
-          return {
-            ...prev,
-            top: { ...prev.top, paper: value },
-            mid1: { ...prev.mid1, paper: sanitizePaper(prev.mid1.paper) },
-            mid2: { ...prev.mid2, paper: sanitizePaper(prev.mid2.paper) },
-            mid3: { ...prev.mid3, paper: sanitizePaper(prev.mid3.paper) },
-            bottom: { ...prev.bottom, paper: sanitizePaper(prev.bottom.paper) },
-          };
-        });
-        return;
-      }
-    }
-
     setPaperLayers(prev => ({
       ...prev,
       [layerKey]: {
@@ -747,9 +715,6 @@ export default function App() {
   ];
 
   const pricingPaperOptions = [
-    'NCR top',
-    'NCR mid',
-    'NCR bot',
     ...activePaperList
   ];
 
@@ -978,10 +943,12 @@ export default function App() {
             const totalRawPaperCost = enabledLayersList.reduce((sum, layer) => {
               const pName = paperLayers[layer.key].paper;
               let pricingKey = pName;
-              if (pName === 'NCR Carbonized Paper') {
-                if (layer.key === 'top') pricingKey = 'NCR top';
-                else if (layer.key === 'bottom') pricingKey = 'NCR bot';
-                else pricingKey = 'NCR mid';
+              if (pName === 'NCR Carbonized Paper' || pName === 'NCR top') {
+                pricingKey = 'Carbonized Top';
+              } else if (pName === 'NCR bot') {
+                pricingKey = 'Carbonized Bot';
+              } else if (pName === 'NCR mid') {
+                pricingKey = 'Carbonized Mid';
               }
               const unitPrice = advancedSettings.paperPrices[pricingKey] !== undefined
                 ? advancedSettings.paperPrices[pricingKey]
@@ -1287,19 +1254,19 @@ export default function App() {
                           const currentData = paperLayers[layer.key];
                           const isOptional = layer.key === 'mid1' || layer.key === 'mid2' || layer.key === 'mid3';
                           const isEnabled = currentData.enabled;
-                          const isTopNcr = paperLayers.top.paper === 'NCR Carbonized Paper';
-                          const layerPaperOptions = layer.key === 'top'
-                            ? allPaperOptions
-                            : (isTopNcr
-                              ? ['NCR Carbonized Paper']
-                              : allPaperOptions.filter(p => p !== 'NCR Carbonized Paper'));
+                          const layerPaperOptions = allPaperOptions;
 
                           // Layer-specific display label for NCR Carbonized Paper
                           const getNcrLabel = (paperName) => {
-                            if (paperName !== 'NCR Carbonized Paper') return paperName;
-                            if (layer.key === 'top') return 'NCR top';
-                            if (layer.key === 'bottom') return 'NCR bot';
-                            return 'NCR mid'; // mid1, mid2, mid3
+                            if (paperName === 'NCR Carbonized Paper') {
+                              if (layer.key === 'top') return 'Carbonized Top';
+                              if (layer.key === 'bottom') return 'Carbonized Bot';
+                              return 'Carbonized Mid';
+                            }
+                            if (paperName === 'NCR top') return 'Carbonized Top';
+                            if (paperName === 'NCR bot') return 'Carbonized Bot';
+                            if (paperName === 'NCR mid') return 'Carbonized Mid';
+                            return paperName;
                           };
 
                           // Offset printing sheet calculations per layer (uses global offsetLayout)
@@ -1531,80 +1498,56 @@ export default function App() {
                           const leafA4 = Math.ceil(plyA4Sheets / layoutDivisorTotal);
                           const leafFs = Math.ceil(plyA4Sheets / 8);
 
-                          // Case 1: All enabled layers are NCR Carbonized Paper
-                          // Show separate totals for NCR top, NCR mid (sum of mid leaves), and NCR bot
-                          const allNcr = enabledLayers.every(l => paperLayers[l.key].paper === 'NCR Carbonized Paper');
-                          if (allNcr) {
-                            const activeKeys = layersConfig.map(l => l.key);
-                            const midCount = ['mid1', 'mid2', 'mid3'].filter(k => activeKeys.includes(k) && paperLayers[k].enabled).length;
-                            const rows = [];
-                            if (paperLayers.top.enabled && activeKeys.includes('top')) {
-                              rows.push({ label: 'Total NCR top', a4: leafA4, fs: leafFs });
-                            }
-                            if (midCount > 0) {
-                              rows.push({ label: 'Total NCR mid', a4: leafA4 * midCount, fs: leafFs * midCount });
-                            }
-                            if (paperLayers.bottom.enabled && activeKeys.includes('bottom')) {
-                              rows.push({ label: 'Total NCR bot', a4: leafA4, fs: leafFs });
-                            }
-                            if (rows.length === 0) return null;
-                            return (
-                              <div style={{ marginTop: '0.5rem', borderTop: '1.5px dashed #e2e8f0', paddingTop: '0.4rem' }}>
-                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                  Total Full Sheets — NCR Carbonized Paper
-                                </div>
-                                {rows.map(r => (
-                                  <div key={r.label} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    background: '#f0fdf4',
-                                    border: '1px solid #bbf7d0',
-                                    borderRadius: '8px',
-                                    padding: '0.28rem 0.65rem',
-                                    marginBottom: '0.22rem'
-                                  }}>
-                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>{r.label}</span>
-                                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                      <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {r.a4.toLocaleString()}</span>
-                                      <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
-                                      <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {r.fs.toLocaleString()} sheets</span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          }
+                          // Group enabled layers by their selected paper
+                          const paperGroups = {};
+                          enabledLayers.forEach(l => {
+                            const pName = paperLayers[l.key].paper;
+                            let displayLabel = pName;
+                            if (pName === 'NCR Carbonized Paper') {
+                              if (l.key === 'top') displayLabel = 'Carbonized Top';
+                              else if (l.key === 'bottom') displayLabel = 'Carbonized Bot';
+                              else displayLabel = 'Carbonized Mid';
+                            } else if (pName === 'NCR top') displayLabel = 'Carbonized Top';
+                            else if (pName === 'NCR bot') displayLabel = 'Carbonized Bot';
+                            else if (pName === 'NCR mid') displayLabel = 'Carbonized Mid';
 
-                          // Case 2: All enabled layers use the exact same non-NCR paper
-                          const topPaper = paperLayers.top.paper;
-                          const anyMismatch = enabledLayers.some(l => paperLayers[l.key].paper !== topPaper);
-                          if (anyMismatch) return null;
+                            if (!paperGroups[displayLabel]) {
+                              paperGroups[displayLabel] = { a4: 0, fs: 0, layers: [] };
+                            }
+                            paperGroups[displayLabel].a4 += leafA4;
+                            paperGroups[displayLabel].fs += leafFs;
+                            paperGroups[displayLabel].layers.push(l.title.replace(' PAPER', ''));
+                          });
 
-                          const totalA4 = leafA4 * enabledLayers.length;
-                          const totalFs = leafFs * enabledLayers.length;
-                          if (totalA4 === 0) return null;
+                          const entries = Object.entries(paperGroups);
+                          if (entries.length === 0) return null;
+
                           return (
                             <div style={{ marginTop: '0.5rem', borderTop: '1.5px dashed #e2e8f0', paddingTop: '0.4rem' }}>
                               <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                Total Full Sheets — {topPaper}
+                                Total Full Sheets by Paper Type
                               </div>
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                background: '#f0fdf4',
-                                border: '1px solid #bbf7d0',
-                                borderRadius: '8px',
-                                padding: '0.28rem 0.65rem',
-                              }}>
-                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>Combined Total (Matching Layers)</span>
-                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {totalA4.toLocaleString()}</span>
-                                  <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
-                                  <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {totalFs.toLocaleString()} sheets</span>
+                              {entries.map(([paperName, data]) => (
+                                <div key={paperName} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  background: '#f0fdf4',
+                                  border: '1px solid #bbf7d0',
+                                  borderRadius: '8px',
+                                  padding: '0.28rem 0.65rem',
+                                  marginBottom: '0.22rem'
+                                }}>
+                                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>
+                                    {paperName} <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#166534' }}>({data.layers.join(', ')})</span>
+                                  </span>
+                                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 800 }}>{layoutLabel}: {data.a4.toLocaleString()}</span>
+                                    <span style={{ width: '1px', height: '12px', background: '#bbf7d0' }} />
+                                    <span style={{ fontSize: '0.7rem', color: '#7e22ce', fontWeight: 800 }}>Full: {data.fs.toLocaleString()} sheets</span>
+                                  </div>
                                 </div>
-                              </div>
+                              ))}
                             </div>
                           );
                         })()}
@@ -1636,18 +1579,18 @@ export default function App() {
                         const currentData = paperLayers[layer.key];
                         const isOptional = layer.key === 'mid1' || layer.key === 'mid2' || layer.key === 'mid3';
                         const isEnabled = currentData.enabled;
-                        const isTopNcr = paperLayers.top.paper === 'NCR Carbonized Paper';
-                        const layerPaperOptions = layer.key === 'top'
-                          ? allPaperOptions
-                          : (isTopNcr
-                            ? ['NCR Carbonized Paper']
-                            : allPaperOptions.filter(p => p !== 'NCR Carbonized Paper'));
+                        const layerPaperOptions = allPaperOptions;
 
                         const getNcrLabel = (paperName) => {
-                          if (paperName !== 'NCR Carbonized Paper') return paperName;
-                          if (layer.key === 'top') return 'NCR top';
-                          if (layer.key === 'bottom') return 'NCR bot';
-                          return 'NCR mid';
+                          if (paperName === 'NCR Carbonized Paper') {
+                            if (layer.key === 'top') return 'Carbonized Top';
+                            if (layer.key === 'bottom') return 'Carbonized Bot';
+                            return 'Carbonized Mid';
+                          }
+                          if (paperName === 'NCR top') return 'Carbonized Top';
+                          if (paperName === 'NCR bot') return 'Carbonized Bot';
+                          if (paperName === 'NCR mid') return 'Carbonized Mid';
+                          return paperName;
                         };
 
                         const sizeDivisor = getRequiredMultiple(selectedSize);
