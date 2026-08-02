@@ -40,7 +40,10 @@ import {
   Settings,
   X,
   Save,
-  RotateCcw
+  RotateCcw,
+  ArrowUp,
+  ArrowDown,
+  Edit2
 } from 'lucide-react';
 
 const DEFAULT_SIZES = [
@@ -108,6 +111,22 @@ const INTERNAL_PAPER_ALIASES = [
   'Normal print 50 GSM', 'Normal Print 50 GSM',
   'Choose paper type'
 ];
+
+const getActivePaperOrder = (settings) => {
+  const defaultList = DEFAULT_PAPERS.map(p => p.name);
+  let order = Array.isArray(settings?.paperOrder) && settings.paperOrder.length > 0
+    ? [...settings.paperOrder]
+    : [...defaultList];
+  
+  if (settings?.paperPrices) {
+    Object.keys(settings.paperPrices).forEach(pName => {
+      if (!INTERNAL_PAPER_ALIASES.includes(pName) && !order.includes(pName)) {
+        order.push(pName);
+      }
+    });
+  }
+  return order.filter(name => !INTERNAL_PAPER_ALIASES.includes(name));
+};
 
 const OFFSET_COLOR_OPTIONS = [
   { id: 1, label: '1 Color' },
@@ -601,18 +620,18 @@ export default function App() {
     ...customSizes.map(name => ({ name, tag: 'Custom Size', multiple: getRequiredMultiple(name) }))
   ];
 
+  const activePaperList = getActivePaperOrder(advancedSettings);
+
   const allPaperOptions = [
     'Choose paper type',
-    ...DEFAULT_PAPERS.map(p => p.name),
-    ...customPapers
+    ...activePaperList
   ];
 
   const pricingPaperOptions = [
     'NCR top',
     'NCR mid',
     'NCR bot',
-    ...DEFAULT_PAPERS.map(p => p.name).filter(name => name !== 'NCR Carbonized Paper'),
-    ...customPapers
+    ...activePaperList
   ];
 
   const requiredMultiple = getRequiredMultiple(selectedSize);
@@ -2118,57 +2137,279 @@ export default function App() {
                 </button>
               </div>
 
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '1rem'
-              }}>
-                {Object.entries(advancedSettings.paperPrices || {})
-                  .filter(([paperName]) => !INTERNAL_PAPER_ALIASES.includes(paperName))
-                  .map(([paperName, price]) => (
-                  <div
-                    key={paperName}
+              {/* Add New Custom Paper Bar */}
+              <form
+                onSubmit={handleAddCustomPaper}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  background: '#F1F5F9',
+                  padding: '0.85rem 1.25rem',
+                  borderRadius: '14px',
+                  marginBottom: '1.5rem',
+                  flexWrap: 'wrap',
+                  border: '1.5px dashed #CBD5E1'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '220px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569', whiteSpace: 'nowrap' }}>+ ADD NEW PAPER:</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. Ivory Board 350gsm"
+                    value={newPaperNameInput}
+                    onChange={(e) => setNewPaperNameInput(e.target.value)}
                     style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      background: '#F8FAFC',
-                      border: '1.5px solid #E2E8F0',
-                      borderRadius: '12px',
-                      padding: '0.8rem 1rem'
+                      flex: 1,
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #CBD5E1',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#0F172A',
+                      background: '#ffffff'
                     }}
-                  >
-                    <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#334155' }}>{paperName}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748B' }}>Rs.</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={price}
-                        onChange={(e) => {
-                          const val = Number(e.target.value) || 0;
-                          setAdvancedSettings(prev => ({
-                            ...prev,
-                            paperPrices: {
-                              ...prev.paperPrices,
-                              [paperName]: val
-                            }
-                          }));
-                        }}
-                        style={{
-                          width: '90px',
-                          padding: '0.35rem 0.6rem',
-                          fontSize: '1rem',
-                          fontWeight: 800,
-                          color: '#0F172A',
-                          border: '2px solid #CBD5E1',
-                          borderRadius: '8px',
-                          textAlign: 'right'
-                        }}
-                      />
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569' }}>PRICE: Rs.</span>
+                  <input
+                    type="number"
+                    step="0.5"
+                    placeholder="0.00"
+                    value={newPaperPriceInput}
+                    onChange={(e) => setNewPaperPriceInput(e.target.value)}
+                    style={{
+                      width: '100px',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #CBD5E1',
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      color: '#0F172A',
+                      textAlign: 'right',
+                      background: '#ffffff'
+                    }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: '#0D9488',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.55rem 1rem',
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(13, 148, 136, 0.25)'
+                  }}
+                >
+                  <PlusCircle size={16} />
+                  <span>Add Paper</span>
+                </button>
+              </form>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}>
+                {getActivePaperOrder(advancedSettings).map((paperName, index, arr) => {
+                  const price = advancedSettings.paperPrices[paperName] || 0;
+                  const isEditing = editingPaperName === paperName;
+                  return (
+                    <div
+                      key={paperName}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#F8FAFC',
+                        border: isEditing ? '2px solid #0D9488' : '1.5px solid #E2E8F0',
+                        borderRadius: '12px',
+                        padding: '0.75rem 1rem',
+                        gap: '1rem',
+                        flexWrap: 'wrap'
+                      }}
+                    >
+                      {/* Left: Reorder Arrows + Paper Name or Edit Form */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: '240px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <button
+                            type="button"
+                            onClick={() => movePaperUp(index)}
+                            disabled={index === 0}
+                            title="Move Up"
+                            style={{
+                              background: index === 0 ? 'transparent' : '#E2E8F0',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '2px 4px',
+                              cursor: index === 0 ? 'default' : 'pointer',
+                              color: index === 0 ? '#CBD5E1' : '#475569',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <ArrowUp size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => movePaperDown(index)}
+                            disabled={index === arr.length - 1}
+                            title="Move Down"
+                            style={{
+                              background: index === arr.length - 1 ? 'transparent' : '#E2E8F0',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '2px 4px',
+                              cursor: index === arr.length - 1 ? 'default' : 'pointer',
+                              color: index === arr.length - 1 ? '#CBD5E1' : '#475569',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <ArrowDown size={12} />
+                          </button>
+                        </div>
+
+                        {isEditing ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1 }}>
+                            <input
+                              type="text"
+                              value={renamedPaperValue}
+                              onChange={(e) => setRenamedPaperValue(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && saveRenamedPaper(paperName)}
+                              autoFocus
+                              style={{
+                                padding: '0.35rem 0.6rem',
+                                borderRadius: '6px',
+                                border: '1.5px solid #0D9488',
+                                fontSize: '0.92rem',
+                                fontWeight: 700,
+                                color: '#0F172A',
+                                flex: 1,
+                                maxWidth: '220px'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => saveRenamedPaper(paperName)}
+                              title="Save name"
+                              style={{
+                                background: '#0D9488',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '0.35rem 0.55rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingPaperName(null)}
+                              title="Cancel"
+                              style={{
+                                background: '#E2E8F0',
+                                color: '#475569',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '0.35rem 0.55rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>{paperName}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingPaperName(paperName);
+                                setRenamedPaperValue(paperName);
+                              }}
+                              title="Rename paper"
+                              style={{
+                                background: '#F1F5F9',
+                                border: 'none',
+                                color: '#64748B',
+                                cursor: 'pointer',
+                                padding: '0.3rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                borderRadius: '6px',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Price Input & Delete Button */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748B' }}>Rs.</span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={price}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0;
+                            setAdvancedSettings(prev => ({
+                              ...prev,
+                              paperPrices: {
+                                ...prev.paperPrices,
+                                [paperName]: val
+                              }
+                            }));
+                          }}
+                          style={{
+                            width: '100px',
+                            padding: '0.4rem 0.65rem',
+                            fontSize: '1rem',
+                            fontWeight: 800,
+                            color: '#0F172A',
+                            border: '2px solid #CBD5E1',
+                            borderRadius: '8px',
+                            textAlign: 'right'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePaper(paperName)}
+                          title="Delete paper"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#EF4444',
+                            cursor: 'pointer',
+                            padding: '0.35rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            borderRadius: '6px',
+                            opacity: 0.7
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
