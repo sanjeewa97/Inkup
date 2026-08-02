@@ -71,10 +71,42 @@ const PRINTING_METHODS = [
 ];
 
 const DEFAULT_PAPERS = [
+  { name: '60gsm Bank Papers', tag: 'Bank Sheet', desc: '60gsm bank paper' },
+  { name: '70gsm Bank Papers', tag: 'Bank Sheet', desc: '70gsm bank paper' },
+  { name: '80gsm Bank Papers', tag: 'Bank Sheet', desc: '80gsm bank paper' },
+  { name: 'Dimai Offwhite', tag: 'Offwhite Sheet', desc: 'Dimai offwhite paper' },
+  { name: 'Carbonized Top', tag: 'NCR CB', desc: 'Carbonized top paper' },
+  { name: 'Carbonized Mid', tag: 'NCR CFB', desc: 'Carbonized mid paper' },
+  { name: 'Carbonized Bot', tag: 'NCR CF', desc: 'Carbonized bottom paper' },
+  { name: 'Art Papers (100gsm)', tag: 'Art Paper', desc: '100gsm art paper' },
+  { name: 'Art Papers (120gsm)', tag: 'Art Paper', desc: '120gsm art paper' },
+  { name: 'Art Board (230gsm)', tag: 'Art Board', desc: '230gsm art board' },
+  { name: 'Art Board (260gsm)', tag: 'Art Board', desc: '260gsm art board' },
+  { name: 'Art Board (310gsm)', tag: 'Art Board', desc: '310gsm art board' },
+  { name: 'Aivory Board (240gsm)', tag: 'Ivory Board', desc: '240gsm ivory board' },
+  { name: 'Aivory Board (300gsm)', tag: 'Ivory Board', desc: '300gsm ivory board' },
+  { name: 'Cover Paper', tag: 'Cover', desc: 'Standard cover paper' },
+  { name: 'Sticker Papers Kingtec', tag: 'Sticker', desc: 'Kingtec sticker sheet' },
+  { name: 'Sticker Papers politag', tag: 'Sticker', desc: 'Politag sticker sheet' },
+  { name: 'Box board 250gsm', tag: 'Box Board', desc: '250gsm box board' },
+  { name: 'Box board 300gsm', tag: 'Box Board', desc: '300gsm box board' },
+  { name: 'Brisil Board white', tag: 'Bristol Board', desc: 'White bristol board' },
+  { name: 'Brisil Board colour', tag: 'Bristol Board', desc: 'Colour bristol board' },
+  { name: 'Dimai Papers', tag: 'Dimai', desc: 'Dimai standard paper' },
+  { name: '80 GSM Dark colour', tag: 'Colour Sheet', desc: '80gsm dark colour paper' },
+  { name: '80 GSM Light colour', tag: 'Colour Sheet', desc: '80gsm light colour paper' },
   { name: 'NCR Carbonized Paper', tag: 'CB / CFB / CF', desc: 'Carbonized set' },
   { name: 'Paper bank 60 GSM', tag: 'Standard Sheet', desc: 'Standard ledger sheet' },
   { name: 'Bond paper 80 GSM', tag: 'Premium Heavy', desc: 'High-end letterhead feel' },
   { name: 'Normal print 50 GSM', tag: 'Economical', desc: 'Quick receipt sheet' },
+];
+
+const INTERNAL_PAPER_ALIASES = [
+  'NCR top', 'NCR mid', 'NCR bot', 'NCR Carbonized Paper',
+  'Paper bank 60 GSM', 'Bank Paper 60 GSM', 'Bank Paper',
+  'Bond paper 80 GSM', 'Bond Paper 80 GSM',
+  'Normal print 50 GSM', 'Normal Print 50 GSM',
+  'Choose paper type'
 ];
 
 const OFFSET_COLOR_OPTIONS = [
@@ -155,17 +187,41 @@ export default function App() {
 
   // Step 4: Advanced Pricing & Cost Settings (9 Options Requested by User)
   const DEFAULT_PAPER_PRICES = {
-    'NCR top': 25.50,
-    'NCR mid': 25.50,
-    'NCR bot': 25.50,
-    'Paper bank 60 GSM': 16.00,
-    'Bond paper 80 GSM': 20.00,
-    'Normal print 50 GSM': 15.20,
-    'NCR Carbonized Paper': 25.50,
-    'Bank Paper 60 GSM': 16.00,
-    'Bank Paper': 16.00,
-    'Bond Paper 80 GSM': 20.00,
-    'Normal Print 50 GSM': 15.20,
+    '60gsm Bank Papers': 13.20,
+    '70gsm Bank Papers': 14.50,
+    '80gsm Bank Papers': 16.80,
+    'Dimai Offwhite': 8.80,
+    'Carbonized Top': 21.40,
+    'Carbonized Mid': 21.40,
+    'Carbonized Bot': 20.80,
+    'Art Papers (100gsm)': 23.40,
+    'Art Papers (120gsm)': 25.60,
+    'Art Board (230gsm)': 64.00,
+    'Art Board (260gsm)': 73.00,
+    'Art Board (310gsm)': 89.00,
+    'Aivory Board (240gsm)': 92.00,
+    'Aivory Board (300gsm)': 112.00,
+    'Cover Paper': 23.00,
+    'Sticker Papers Kingtec': 71.00,
+    'Sticker Papers politag': 84.50,
+    'Box board 250gsm': 56.00,
+    'Box board 300gsm': 65.00,
+    'Brisil Board white': 26.00,
+    'Brisil Board colour': 35.00,
+    'Dimai Papers': 17.60,
+    '80 GSM Dark colour': 35.00,
+    '80 GSM Light colour': 28.00,
+    'NCR top': 21.40,
+    'NCR mid': 21.40,
+    'NCR bot': 20.80,
+    'NCR Carbonized Paper': 21.40,
+    'Paper bank 60 GSM': 13.20,
+    'Bank Paper 60 GSM': 13.20,
+    'Bank Paper': 13.20,
+    'Bond paper 80 GSM': 16.80,
+    'Bond Paper 80 GSM': 16.80,
+    'Normal print 50 GSM': 13.20,
+    'Normal Print 50 GSM': 13.20,
     'Choose paper type': 0.00,
   };
 
@@ -176,10 +232,11 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (!parsed.paperPrices) parsed.paperPrices = {};
         for (const [k, v] of Object.entries(DEFAULT_PAPER_PRICES)) {
-          if (parsed.paperPrices[k] === undefined || (k.startsWith('NCR') && parsed.paperPrices[k] === 3.50)) {
+          if (parsed.paperPrices[k] === undefined || !localStorage.getItem('paper_prices_updated_user_list_v4')) {
             parsed.paperPrices[k] = v;
           }
         }
+        localStorage.setItem('paper_prices_updated_user_list_v4', 'true');
         if (parsed.designingCharge === undefined) parsed.designingCharge = 500;
         return parsed;
       } catch (e) {
@@ -2066,7 +2123,9 @@ export default function App() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                 gap: '1rem'
               }}>
-                {Object.entries(advancedSettings.paperPrices || {}).map(([paperName, price]) => (
+                {Object.entries(advancedSettings.paperPrices || {})
+                  .filter(([paperName]) => !INTERNAL_PAPER_ALIASES.includes(paperName))
+                  .map(([paperName, price]) => (
                   <div
                     key={paperName}
                     style={{
