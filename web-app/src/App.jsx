@@ -775,9 +775,9 @@ export default function App() {
               : duploPrintedSheets * (Number(advancedSettings.duploCost) || 0);
             const basePrintCostPerSheet = totalPrintedSheets > 0 ? totalPrintingCost / totalPrintedSheets : 0;
 
-            // 3) Plate Price
-            const plateUnits = enabledLayersList.reduce((sum, layer) => {
-              const c = Number(paperLayers[layer.key].color) || 0;
+            // 3) Plate Price (grouped by distinct color rating so layers with same color share plates)
+            const plateUnits = Object.keys(sheetsByColor).reduce((sum, colorVal) => {
+              const c = Number(colorVal) || 0;
               if (c === 0) return sum;
               if (c <= 2) return sum + 1;
               return sum + 2;
