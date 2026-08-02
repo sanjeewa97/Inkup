@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { auth, googleProvider } from './firebase';
+import { auth, googleProvider, db } from './firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import {
   BookOpen,
   ShieldCheck,
@@ -265,8 +266,49 @@ export default function App() {
       }
     }
 
-    return () => unsubscribe();
+    // Listen for real-time cloud settings from Firestore
+    let unsubscribeFirestore = () => {};
+    try {
+      unsubscribeFirestore = onSnapshot(doc(db, 'settings', 'billBookEstimator'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.customSizes) {
+            setCustomSizes(data.customSizes);
+            localStorage.setItem('custom_bill_book_sizes', JSON.stringify(data.customSizes));
+          }
+          if (data.customPapers) {
+            setCustomPapers(data.customPapers);
+            localStorage.setItem('custom_top_papers', JSON.stringify(data.customPapers));
+          }
+          if (data.itemDefaults) {
+            setItemDefaults(data.itemDefaults);
+            localStorage.setItem('printing_item_defaults', JSON.stringify(data.itemDefaults));
+          }
+          if (data.advancedSettings) {
+            setAdvancedSettings(prev => ({ ...prev, ...data.advancedSettings }));
+            localStorage.setItem('custom_bill_book_advanced_settings', JSON.stringify(data.advancedSettings));
+          }
+        }
+      }, (err) => {
+        console.log('Firestore listener fallback to localStorage:', err.message);
+      });
+    } catch (err) {
+      console.log('Firestore listener init skipped:', err.message);
+    }
+
+    return () => {
+      unsubscribe();
+      unsubscribeFirestore();
+    };
   }, []);
+
+  const saveToCloudSettings = async (payload) => {
+    try {
+      await setDoc(doc(db, 'settings', 'billBookEstimator'), payload, { merge: true });
+    } catch (e) {
+      console.log('Cloud sync offline/disabled (using localStorage):', e.message);
+    }
+  };
 
   const showToast = (text) => {
     setNotification(text);
@@ -364,6 +406,7 @@ export default function App() {
       const updated = [...customSizes, trimmed];
       setCustomSizes(updated);
       localStorage.setItem('custom_bill_book_sizes', JSON.stringify(updated));
+      saveToCloudSettings({ customSizes: updated });
       handleSizeClick(trimmed);
       showToast(`Added and selected "${trimmed}"`);
     } else {
@@ -376,6 +419,7 @@ export default function App() {
       const updated = [...customPapers, trimmed];
       setCustomPapers(updated);
       localStorage.setItem('custom_top_papers', JSON.stringify(updated));
+      saveToCloudSettings({ customPapers: updated });
       showToast(`Added paper option "${trimmed}"`);
     }
 
@@ -388,6 +432,7 @@ export default function App() {
     const updated = customSizes.filter((s) => s !== sizeToDelete);
     setCustomSizes(updated);
     localStorage.setItem('custom_bill_book_sizes', JSON.stringify(updated));
+    saveToCloudSettings({ customSizes: updated });
     if (selectedSize === sizeToDelete) {
       handleSizeClick(DEFAULT_SIZES[0].name);
     }
@@ -399,6 +444,7 @@ export default function App() {
     const updated = customPapers.filter((p) => p !== paperToDelete);
     setCustomPapers(updated);
     localStorage.setItem('custom_top_papers', JSON.stringify(updated));
+    saveToCloudSettings({ customPapers: updated });
     showToast(`Removed "${paperToDelete}"`);
   };
 
@@ -461,6 +507,7 @@ export default function App() {
     };
     setItemDefaults(updated);
     localStorage.setItem('printing_item_defaults', JSON.stringify(updated));
+    saveToCloudSettings({ itemDefaults: updated });
     showToast(`Saved defaults for ${calcModalItem}`);
   };
 
@@ -2071,6 +2118,7 @@ export default function App() {
                   className="btn-modal-secondary-modern"
                   onClick={() => {
                     localStorage.setItem('custom_bill_book_advanced_settings', JSON.stringify(advancedSettings));
+                    saveToCloudSettings({ advancedSettings });
                     setShowAdvancedModal(false);
                     showToast('Saved as default for future bills & applied to current bill');
                   }}
