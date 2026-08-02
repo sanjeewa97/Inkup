@@ -560,6 +560,7 @@ export default function App() {
     { name: 'Name Board', icon: Bookmark, color: '#9A3412' },
     { name: 'Light Board', icon: Lightbulb, color: '#D97706' },
     { name: 'Stand Board', icon: Signpost, color: '#64748B' },
+    ...(isAdmin ? [{ name: 'Admin\nDashboard', icon: ShieldCheck, color: '#E11D48', isAdminDashboard: true }] : [])
   ];
 
   // Layer metadata for display
@@ -654,6 +655,8 @@ export default function App() {
                     onClick={() => {
                       if (item.isBillBook) {
                         setCurrentScreen('bill_book');
+                      } else if (item.isAdminDashboard) {
+                        setCurrentScreen('admin_dashboard');
                       } else {
                         handleOpenCalculator(item.name.replace('\n', ' '));
                       }
@@ -1809,6 +1812,313 @@ export default function App() {
               </main>
             );
           })()}
+        </>
+      )}
+
+      {/* ADMIN DASHBOARD SCREEN (Only visible for Admin/Owner) */}
+      {currentScreen === 'admin_dashboard' && isAdmin && (
+        <>
+          <div className="subscreen-header">
+            <button className="btn-back" onClick={() => setCurrentScreen('home')}>
+              <ArrowLeft size={20} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <ShieldCheck size={24} color="#E11D48" />
+              <h1 className="subscreen-title" style={{ margin: 0 }}>Owner Admin Dashboard</h1>
+            </div>
+          </div>
+
+          <div className="subscreen-navbar" style={{ background: 'linear-gradient(135deg, #E11D48, #BE123C)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <ShieldCheck size={24} color="#ffffff" />
+              <h1 className="subscreen-nav-title">Shop Rates & Pricing Controls</h1>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <button
+                className="btn-nav-action"
+                style={{ background: 'rgba(255,255,255,0.2)' }}
+                onClick={() => {
+                  localStorage.setItem('custom_bill_book_advanced_settings', JSON.stringify(advancedSettings));
+                  saveToCloudSettings({ advancedSettings });
+                  showToast('All shop pricing & settings saved to Cloud Firestore!');
+                }}
+              >
+                <Save size={16} />
+                <span>Save to Cloud</span>
+              </button>
+            </div>
+          </div>
+
+          <main style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem', paddingBottom: '5rem' }}>
+            {/* Top Owner Banner */}
+            <div className="owner-banner" style={{ margin: '0 0 1.5rem', background: '#FFF1F2', borderColor: '#FECDD3', color: '#9F1239' }}>
+              <ShieldCheck size={18} color="#E11D48" />
+              <span style={{ fontWeight: 700 }}>REAL-TIME CLOUD FIRESTORE CONNECTED:</span>
+              <span>All changes made here instantly sync across devices and become default for all estimators.</span>
+            </div>
+
+            {/* Grid of Key Admin Quick Stats & Rates */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '1rem',
+              marginBottom: '2rem'
+            }}>
+              {/* Profit Margin Card */}
+              <div style={{
+                background: '#ffffff',
+                border: '2px solid #E2E8F0',
+                borderRadius: '16px',
+                padding: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Profit Margin</span>
+                  <div style={{ background: '#EEF2FF', color: '#4F46E5', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>Default</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="number"
+                    value={advancedSettings.profitPercentage}
+                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, profitPercentage: Number(e.target.value) || 0 }))}
+                    style={{ width: '90px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
+                  />
+                  <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#4F46E5' }}>%</span>
+                </div>
+              </div>
+
+              {/* Wastage Allowance Card */}
+              <div style={{
+                background: '#ffffff',
+                border: '2px solid #E2E8F0',
+                borderRadius: '16px',
+                padding: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Wastage Allowance</span>
+                  <div style={{ background: '#FFF7ED', color: '#D97706', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>Paper Buffer</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="number"
+                    value={advancedSettings.wastagePercentage}
+                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, wastagePercentage: Number(e.target.value) || 0 }))}
+                    style={{ width: '90px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
+                  />
+                  <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#D97706' }}>%</span>
+                </div>
+              </div>
+
+              {/* Plate Price Card */}
+              <div style={{
+                background: '#ffffff',
+                border: '2px solid #E2E8F0',
+                borderRadius: '16px',
+                padding: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Plate Price (Per Unit)</span>
+                  <div style={{ background: '#F0FDF4', color: '#16A34A', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>Offset Plate</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#64748B' }}>Rs.</span>
+                  <input
+                    type="number"
+                    value={advancedSettings.platePrice}
+                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, platePrice: Number(e.target.value) || 0 }))}
+                    style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Impression Charges Card */}
+              <div style={{
+                background: '#ffffff',
+                border: '2px solid #E2E8F0',
+                borderRadius: '16px',
+                padding: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Impression Charge</span>
+                  <div style={{ background: '#FAF5FF', color: '#9333EA', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>Per 1,000 imp</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#64748B' }}>Rs.</span>
+                  <input
+                    type="number"
+                    value={advancedSettings.impressionCharge}
+                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, impressionCharge: Number(e.target.value) || 0 }))}
+                    style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Binding Rate Card */}
+              <div style={{
+                background: '#ffffff',
+                border: '2px solid #E2E8F0',
+                borderRadius: '16px',
+                padding: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Binding Rate (Per Book)</span>
+                  <div style={{ background: '#ECFDF5', color: '#047857', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>Finishing</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#64748B' }}>Rs.</span>
+                  <input
+                    type="number"
+                    value={advancedSettings.bindingRate}
+                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, bindingRate: Number(e.target.value) || 0 }))}
+                    style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Designing Charge Card */}
+              <div style={{
+                background: '#ffffff',
+                border: '2px solid #E2E8F0',
+                borderRadius: '16px',
+                padding: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Designing Charge</span>
+                  <div style={{ background: '#FCE7F3', color: '#BE185D', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800 }}>Design Studio</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#64748B' }}>Rs.</span>
+                  <input
+                    type="number"
+                    value={advancedSettings.designingCharge}
+                    onChange={(e) => setAdvancedSettings(prev => ({ ...prev, designingCharge: Number(e.target.value) || 0 }))}
+                    style={{ width: '130px', fontSize: '1.6rem', fontWeight: 900, color: '#1E293B', border: '2px solid #CBD5E1', borderRadius: '10px', padding: '0.25rem 0.5rem' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Paper Prices Editor Table */}
+            <div style={{
+              background: '#ffffff',
+              border: '2px solid #E2E8F0',
+              borderRadius: '20px',
+              padding: '1.75rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              marginBottom: '2rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Per-Sheet Paper Pricing Table</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>Configure default per-sheet cost (Rs.) used across all calculation layers</p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-modal-secondary-modern"
+                  onClick={() => {
+                    setShowSettingsModal(true);
+                  }}
+                >
+                  <PlusCircle size={16} />
+                  <span>Manage Custom Sizes & Papers</span>
+                </button>
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '1rem'
+              }}>
+                {Object.entries(advancedSettings.paperPrices || {}).map(([paperName, price]) => (
+                  <div
+                    key={paperName}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: '#F8FAFC',
+                      border: '1.5px solid #E2E8F0',
+                      borderRadius: '12px',
+                      padding: '0.8rem 1rem'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#334155' }}>{paperName}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748B' }}>Rs.</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={price}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          setAdvancedSettings(prev => ({
+                            ...prev,
+                            paperPrices: {
+                              ...prev.paperPrices,
+                              [paperName]: val
+                            }
+                          }));
+                        }}
+                        style={{
+                          width: '90px',
+                          padding: '0.35rem 0.6rem',
+                          fontSize: '1rem',
+                          fontWeight: 800,
+                          color: '#0F172A',
+                          border: '2px solid #CBD5E1',
+                          borderRadius: '8px',
+                          textAlign: 'right'
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Save Bar */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '1rem',
+              background: '#ffffff',
+              border: '2px solid #E2E8F0',
+              borderRadius: '16px',
+              padding: '1.25rem 1.75rem',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                type="button"
+                className="btn-modal-reset-modern"
+                onClick={() => {
+                  setAdvancedSettings(getInitialAdvancedSettings());
+                  showToast('Reset rates to default shop prices');
+                }}
+              >
+                <RotateCcw size={16} />
+                <span>Reset Defaults</span>
+              </button>
+              <button
+                type="button"
+                className="btn-modal-primary-modern"
+                style={{ background: 'linear-gradient(135deg, #E11D48, #BE123C)', borderColor: '#BE123C' }}
+                onClick={() => {
+                  localStorage.setItem('custom_bill_book_advanced_settings', JSON.stringify(advancedSettings));
+                  saveToCloudSettings({ advancedSettings });
+                  showToast('All shop pricing & settings saved to Cloud Firestore!');
+                }}
+              >
+                <Save size={18} />
+                <span style={{ fontSize: '1rem', fontWeight: 800 }}>Save All Shop Settings to Cloud</span>
+              </button>
+            </div>
+          </main>
         </>
       )}
 
