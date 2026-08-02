@@ -680,14 +680,36 @@ export default function App() {
               const layerA4Sheets = Math.ceil(layerLeaves / sizeDivisor);
               return sum + (isPrinted ? layerA4Sheets : 0);
             }, 0);
+            const layoutDivisor = offsetLayout === 'A4' ? 1 : 2;
+            const sheetsByColor = {};
+            enabledLayersList.forEach(layer => {
+              const colorVal = Number(paperLayers[layer.key].color) || 0;
+              if (colorVal > 0) {
+                const layerLeaves = quantity * pageQuantity;
+                const layerA4Sheets = Math.ceil(layerLeaves / sizeDivisor);
+                const effectiveSheets = Math.ceil(layerA4Sheets / layoutDivisor);
+                sheetsByColor[colorVal] = Math.max(sheetsByColor[colorVal] || 0, effectiveSheets);
+              }
+            });
+            const totalOffsetImpressionCharges = Object.entries(sheetsByColor).reduce((sum, [colorVal, sheets]) => {
+              const colorMultiplier = Number(colorVal) || 1;
+              const unitsForColor = Math.max(1, Math.ceil(sheets / 1000));
+              return sum + (unitsForColor * colorMultiplier);
+            }, 0);
             const totalPrintingCost = printingMethod === 'Offset Printing'
-              ? Math.max(1, Math.ceil(totalPrintedSheets / 1000)) * (Number(advancedSettings.impressionCost) || 0)
+              ? Math.max(1, totalOffsetImpressionCharges) * (Number(advancedSettings.impressionCost) || 0)
               : duploPrintedSheets * (Number(advancedSettings.duploCost) || 0);
             const basePrintCostPerSheet = totalPrintedSheets > 0 ? totalPrintingCost / totalPrintedSheets : 0;
 
             // 3) Plate Price
+            const plateUnits = enabledLayersList.reduce((sum, layer) => {
+              const c = Number(paperLayers[layer.key].color) || 0;
+              if (c === 0) return sum;
+              if (c <= 2) return sum + 1;
+              return sum + 2;
+            }, 0);
             const totalPlateCost = printingMethod === 'Offset Printing'
-              ? (Number(advancedSettings.platePrice) || 0)
+              ? plateUnits * (Number(advancedSettings.platePrice) || 0)
               : 0;
 
             // 4) Binding, Transport, Designing, Additional
@@ -888,44 +910,27 @@ export default function App() {
                 </div>
               )}
 
-              {/* Informative notice for NCR restriction */}
-              {paperLayers.top.paper === 'NCR Carbonized Paper' && (
+              {/* Error/Warning notice when Duplo printed sheets < 100 */}
+              {printingMethod === 'Duplo Printing' && duploPrintedSheets < 100 && (
                 <div style={{
-                  background: '#fef3c7',
-                  border: '1px solid #fde68a',
-                  color: '#92400e',
-                  padding: '0.22rem 0.55rem',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#b91c1c',
+                  padding: '0.28rem 0.55rem',
                   borderRadius: '7px',
-                  fontSize: '0.7rem',
+                  fontSize: '0.72rem',
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.4rem',
                   marginBottom: '0.35rem'
                 }}>
-                  <Info size={14} color="#d97706" />
-                  <span>NCR Rule: Since Top Paper is NCR Carbonized, other sheets are locked to NCR Carbonized Paper.</span>
+                  <Info size={14} color="#dc2626" />
+                  <span>Minimum 100 sheets (pages) required for Duplo printing — total price is hidden until at least 100 sheets.</span>
                 </div>
               )}
 
-              {paperLayers.top.paper !== 'NCR Carbonized Paper' && paperLayers.top.paper !== 'Choose paper type' && (
-                <div style={{
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  color: '#1e3a8a',
-                  padding: '0.22rem 0.55rem',
-                  borderRadius: '7px',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  marginBottom: '0.35rem'
-                }}>
-                  <Info size={14} color="#2563eb" />
-                  <span>Printing Rule: Since Top Paper is not NCR Carbonized, other sheets cannot be selected as NCR Carbonized.</span>
-                </div>
-              )}
+
 
               {/* 5 Layer Sheets List Table: Top, Mid 1, Mid 2, Mid 3, Bottom */}
               <div className="paper-list-container">
@@ -1352,7 +1357,13 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
                     <button
                       className="btn-action-large blue"
-                      onClick={() => showToast(`Calculating Total Price: Rs. ${formatCurrency(estimatedTotal)}`)}
+                      onClick={() => {
+                        if (printingMethod === 'Duplo Printing' && duploPrintedSheets < 100) {
+                          showToast(`Minimum 100 sheets required for Duplo printing (currently ${duploPrintedSheets} sheets)`);
+                        } else {
+                          showToast(`Calculating Total Price: Rs. ${formatCurrency(estimatedTotal)}`);
+                        }
+                      }}
                     >
                       <Calculator size={20} />
                       <span>CALCULATE PRICE</span>
@@ -1403,110 +1414,136 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="summary-section-title">COST BREAKDOWN</div>
-                      <div className="summary-spec-list" style={{ marginBottom: 0 }}>
-                        <div className="summary-spec-row">
-                          <span className="summary-spec-label">Paper Cost (+{advancedSettings.wastagePercentage}% Wastage)</span>
-                          <span className="summary-spec-value">Rs. {formatCurrency(totalPaperCostWithWastage)}</span>
-                        </div>
-                        <div className="summary-spec-row">
-                          <span className="summary-spec-label">{printingMethod === 'Offset Printing' ? 'Impression Charges' : `Duplo Printing (${duploPrintedSheets.toLocaleString()} sheets)`}</span>
-                          <span className="summary-spec-value">Rs. {formatCurrency(totalPrintingCost)}</span>
-                        </div>
-                        {printingMethod === 'Offset Printing' && (
-                          <div className="summary-spec-row">
-                            <span className="summary-spec-label">Plate Price</span>
-                            <span className="summary-spec-value">Rs. {formatCurrency(totalPlateCost)}</span>
+                      {printingMethod === 'Duplo Printing' && duploPrintedSheets < 100 ? (
+                        <div style={{
+                          background: '#fef2f2',
+                          border: '2px dashed #f87171',
+                          borderRadius: '10px',
+                          padding: '1.25rem 1rem',
+                          textAlign: 'center',
+                          margin: '1.25rem 0',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '0.6rem'
+                        }}>
+                          <Info size={28} color="#dc2626" />
+                          <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#b91c1c' }}>
+                            Minimum 100 Pages Required
                           </div>
-                        )}
-                        <div className="summary-spec-row">
-                          <span className="summary-spec-label">Binding Cost</span>
-                          <span className="summary-spec-value">Rs. {formatCurrency(totalBindingCost)}</span>
-                        </div>
-                        {printingMethod === 'Offset Printing' && (
-                          <div className="summary-spec-row">
-                            <span className="summary-spec-label">Transport Charges</span>
-                            <span className="summary-spec-value">Rs. {formatCurrency(totalTransportCost)}</span>
+                          <div style={{ fontSize: '0.78rem', color: '#991b1b', lineHeight: 1.4 }}>
+                            For Duplo Duplicator printing, a minimum of <strong>100 sheets (pages)</strong> is required (currently {duploPrintedSheets} sheets).<br />
+                            Please increase the book quantity or sets per book to display the total price.
                           </div>
-                        )}
-                        <div className="summary-spec-row">
-                          <span className="summary-spec-label">Designing Charge</span>
-                          <span className="summary-spec-value">Rs. {formatCurrency(totalDesigningCost)}</span>
                         </div>
-                        {totalAdditionalCost > 0 && (
-                          <div className="summary-spec-row">
-                            <span className="summary-spec-label">{advancedSettings.additionalChargeName || 'Additional Charges'}</span>
-                            <span className="summary-spec-value">Rs. {formatCurrency(totalAdditionalCost)}</span>
+                      ) : (
+                        <>
+                          <div className="summary-section-title">COST BREAKDOWN</div>
+                          <div className="summary-spec-list" style={{ marginBottom: 0 }}>
+                            <div className="summary-spec-row">
+                              <span className="summary-spec-label">Paper Cost (+{advancedSettings.wastagePercentage}% Wastage)</span>
+                              <span className="summary-spec-value">Rs. {formatCurrency(totalPaperCostWithWastage)}</span>
+                            </div>
+                            <div className="summary-spec-row">
+                              <span className="summary-spec-label">{printingMethod === 'Offset Printing' ? `Impression Charges (${Math.max(1, totalOffsetImpressionCharges)} ${Math.max(1, totalOffsetImpressionCharges) === 1 ? 'charge' : 'charges'}${(sizeDivisor * (offsetLayout === '2up' ? 2 : 1)) > 1 ? ` @ ${(sizeDivisor * (offsetLayout === '2up' ? 2 : 1))}-up` : ''})` : `Duplo Printing (${duploPrintedSheets.toLocaleString()} sheets)`}</span>
+                              <span className="summary-spec-value">Rs. {formatCurrency(totalPrintingCost)}</span>
+                            </div>
+                            {printingMethod === 'Offset Printing' && (
+                              <div className="summary-spec-row">
+                                <span className="summary-spec-label">{`Plate Price (${plateUnits} ${plateUnits === 1 ? 'unit' : 'units'})`}</span>
+                                <span className="summary-spec-value">Rs. {formatCurrency(totalPlateCost)}</span>
+                              </div>
+                            )}
+                            <div className="summary-spec-row">
+                              <span className="summary-spec-label">Binding Cost</span>
+                              <span className="summary-spec-value">Rs. {formatCurrency(totalBindingCost)}</span>
+                            </div>
+                            {printingMethod === 'Offset Printing' && (
+                              <div className="summary-spec-row">
+                                <span className="summary-spec-label">Transport Charges</span>
+                                <span className="summary-spec-value">Rs. {formatCurrency(totalTransportCost)}</span>
+                              </div>
+                            )}
+                            <div className="summary-spec-row">
+                              <span className="summary-spec-label">Designing Charge</span>
+                              <span className="summary-spec-value">Rs. {formatCurrency(totalDesigningCost)}</span>
+                            </div>
+                            {totalAdditionalCost > 0 && (
+                              <div className="summary-spec-row">
+                                <span className="summary-spec-label">{advancedSettings.additionalChargeName || 'Additional Charges'}</span>
+                                <span className="summary-spec-value">Rs. {formatCurrency(totalAdditionalCost)}</span>
+                              </div>
+                            )}
+                            <div className="summary-spec-row" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.35rem', marginTop: '0.2rem' }}>
+                              <span className="summary-spec-label" style={{ fontWeight: 800, color: '#334155' }}>Subtotal (Production Cost)</span>
+                              <span className="summary-spec-value" style={{ fontWeight: 800 }}>Rs. {formatCurrency(totalBaseCost)}</span>
+                            </div>
+                            <div className="summary-spec-row">
+                              <span className="summary-spec-label" style={{ color: '#0d9488' }}>Profit ({advancedSettings.profitPercentage}%)</span>
+                              <span className="summary-spec-value" style={{ color: '#0d9488', fontWeight: 800 }}>Rs. {formatCurrency(totalProfitAmount)}</span>
+                            </div>
+                            {quantity > 1 && (
+                              <div className="summary-spec-row" style={{
+                                borderTop: '1px solid #bbf7d0',
+                                padding: '0.4rem 0.65rem',
+                                marginTop: '0.35rem',
+                                background: '#f0fdf4',
+                                borderRadius: '6px'
+                              }}>
+                                <span className="summary-spec-label" style={{ fontWeight: 700, color: '#166534' }}>Price per Book</span>
+                                <span className="summary-spec-value" style={{ fontWeight: 800, color: '#15803d' }}>Rs. {formatCurrency(estimatedTotal / quantity)}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        <div className="summary-spec-row" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.35rem', marginTop: '0.2rem' }}>
-                          <span className="summary-spec-label" style={{ fontWeight: 800, color: '#334155' }}>Subtotal (Production Cost)</span>
-                          <span className="summary-spec-value" style={{ fontWeight: 800 }}>Rs. {formatCurrency(totalBaseCost)}</span>
-                        </div>
-                        <div className="summary-spec-row">
-                          <span className="summary-spec-label" style={{ color: '#0d9488' }}>Profit ({advancedSettings.profitPercentage}%)</span>
-                          <span className="summary-spec-value" style={{ color: '#0d9488', fontWeight: 800 }}>Rs. {formatCurrency(totalProfitAmount)}</span>
-                        </div>
-                        {quantity > 1 && (
-                          <div className="summary-spec-row" style={{
-                            borderTop: '1px solid #bbf7d0',
-                            padding: '0.4rem 0.65rem',
-                            marginTop: '0.35rem',
-                            background: '#f0fdf4',
-                            borderRadius: '6px'
-                          }}>
-                            <span className="summary-spec-label" style={{ fontWeight: 700, color: '#166534' }}>Price per Book</span>
-                            <span className="summary-spec-value" style={{ fontWeight: 800, color: '#15803d' }}>Rs. {formatCurrency(estimatedTotal / quantity)}</span>
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Green Highlight Box for Total Price */}
-                      <div className="total-price-highlight-box" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                          <span className="total-price-label">TOTAL PRICE</span>
-                          <span className="total-price-amount">
-                            Rs. {formatCurrency(estimatedTotal)}
-                          </span>
-                        </div>
-                        {quantity > 1 && (
-                          <div style={{
-                            width: '100%',
-                            background: '#ffffff',
-                            border: '1px solid #bbf7d0',
-                            borderRadius: '8px',
-                            padding: '0.45rem 0.8rem',
-                            marginTop: '0.4rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-                          }}>
-                            <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#166534', letterSpacing: '0.2px' }}>Price per Book</span>
-                            <span style={{ fontSize: '0.98rem', fontWeight: 800, color: '#15803d' }}>Rs. {formatCurrency(estimatedTotal / quantity)}</span>
+                          {/* Green Highlight Box for Total Price */}
+                          <div className="total-price-highlight-box" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                              <span className="total-price-label">TOTAL PRICE</span>
+                              <span className="total-price-amount">
+                                Rs. {formatCurrency(estimatedTotal)}
+                              </span>
+                            </div>
+                            {quantity > 1 && (
+                              <div style={{
+                                width: '100%',
+                                background: '#ffffff',
+                                border: '1px solid #bbf7d0',
+                                borderRadius: '8px',
+                                padding: '0.45rem 0.8rem',
+                                marginTop: '0.4rem',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                              }}>
+                                <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#166534', letterSpacing: '0.2px' }}>Price per Book</span>
+                                <span style={{ fontSize: '0.98rem', fontWeight: 800, color: '#15803d' }}>Rs. {formatCurrency(estimatedTotal / quantity)}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Print Preview & Print Buttons inside Price Summary */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginTop: '0.75rem' }}>
-                        <button
-                          className="btn-preview-action blue"
-                          onClick={() => showToast('Opening Print Preview...')}
-                          style={{ padding: '0.55rem 0.5rem', fontSize: '0.8rem' }}
-                        >
-                          <Printer size={15} />
-                          <span>PRINT PREVIEW</span>
-                        </button>
-                        <button
-                          className="btn-preview-action green"
-                          onClick={() => showToast('Sending Estimate to Printer...')}
-                          style={{ padding: '0.55rem 0.5rem', fontSize: '0.8rem' }}
-                        >
-                          <Check size={15} />
-                          <span>PRINT</span>
-                        </button>
-                      </div>
+                          {/* Print Preview & Print Buttons inside Price Summary */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginTop: '0.75rem' }}>
+                            <button
+                              className="btn-preview-action blue"
+                              onClick={() => showToast('Opening Print Preview...')}
+                              style={{ padding: '0.55rem 0.5rem', fontSize: '0.8rem' }}
+                            >
+                              <Printer size={15} />
+                              <span>PRINT PREVIEW</span>
+                            </button>
+                            <button
+                              className="btn-preview-action green"
+                              onClick={() => showToast('Sending Estimate to Printer...')}
+                              style={{ padding: '0.55rem 0.5rem', fontSize: '0.8rem' }}
+                            >
+                              <Check size={15} />
+                              <span>PRINT</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
