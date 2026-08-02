@@ -562,18 +562,22 @@ export default function App() {
     { name: 'Stand Board', icon: Signpost, color: '#64748B' },
   ];
 
-  // Helper calculation for how many sheets are active in the set
-  const activeCount = Object.values(paperLayers).filter(l => l.enabled).length;
-  const plyLabel = activeCount === 1 ? '1-Ply' : `${activeCount}-Ply Set`;
-
   // Layer metadata for display
-  const layersConfig = [
+  const allLayersConfig = [
     { key: 'top', title: 'TOP PAPER', subtitle: '1st Leaf (Original)', badgeColor: '#fef3c7', badgeText: '#d97706' },
     { key: 'mid1', title: 'MID 1 PAPER', subtitle: '2nd Leaf (Duplicate)', badgeColor: '#e0e7ff', badgeText: '#4338ca' },
     { key: 'mid2', title: 'MID 2 PAPER', subtitle: '3rd Leaf (Triplicate)', badgeColor: '#f3e8ff', badgeText: '#7e22ce' },
     { key: 'mid3', title: 'MID 3 PAPER', subtitle: '4th Leaf (Quadruplicate)', badgeColor: '#fce7f3', badgeText: '#be185d' },
     { key: 'bottom', title: 'BOTTOM PAPER', subtitle: 'Final Leaf (Last Copy)', badgeColor: '#ecfdf5', badgeText: '#047857' },
   ];
+
+  const layersConfig = selectedBookCategory === 'Pad book'
+    ? allLayersConfig.filter(l => l.key === 'top')
+    : allLayersConfig;
+
+  // Helper calculation for how many sheets are active in the set
+  const activeCount = layersConfig.filter(l => paperLayers[l.key].enabled).length;
+  const plyLabel = activeCount === 1 ? '1-Ply (Single Paper)' : `${activeCount}-Ply Set`;
 
   return (
     <div className="app-container">
@@ -1300,15 +1304,16 @@ export default function App() {
                           // Show separate totals for NCR top, NCR mid (sum of mid leaves), and NCR bot
                           const allNcr = enabledLayers.every(l => paperLayers[l.key].paper === 'NCR Carbonized Paper');
                           if (allNcr) {
-                            const midCount = ['mid1', 'mid2', 'mid3'].filter(k => paperLayers[k].enabled).length;
+                            const activeKeys = layersConfig.map(l => l.key);
+                            const midCount = ['mid1', 'mid2', 'mid3'].filter(k => activeKeys.includes(k) && paperLayers[k].enabled).length;
                             const rows = [];
-                            if (paperLayers.top.enabled) {
+                            if (paperLayers.top.enabled && activeKeys.includes('top')) {
                               rows.push({ label: 'Total NCR top', a4: leafA4, fs: leafFs });
                             }
                             if (midCount > 0) {
                               rows.push({ label: 'Total NCR mid', a4: leafA4 * midCount, fs: leafFs * midCount });
                             }
-                            if (paperLayers.bottom.enabled) {
+                            if (paperLayers.bottom.enabled && activeKeys.includes('bottom')) {
                               rows.push({ label: 'Total NCR bot', a4: leafA4, fs: leafFs });
                             }
                             if (rows.length === 0) return null;
