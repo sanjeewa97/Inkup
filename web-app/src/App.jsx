@@ -551,7 +551,7 @@ export default function App() {
 
   // 8 Homepage Menu Items (Matching Flutter app colors & icons)
   const menuItems = [
-    { name: 'Bill Book', icon: ReceiptText, color: '#F97316', isBillBook: true },
+    { name: 'Books', icon: ReceiptText, color: '#F97316', isBillBook: true },
     { name: 'Pad Book', icon: Book, color: '#4F46E5' },
     { name: 'Poly Bag\nPrint', icon: ShoppingBag, color: '#9333EA' },
     { name: 'Photo Frame', icon: ImageIcon, color: '#0D9488' },
@@ -694,13 +694,13 @@ export default function App() {
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <ReceiptText size={24} color="#ffffff" />
-                <h1 className="subscreen-nav-title">Bill / Invoice Price Calculator</h1>
+                <h1 className="subscreen-nav-title">Books Price Calculator</h1>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               <button className="btn-nav-action" onClick={() => handleResetAll()}>
                 <Plus size={16} />
-                <span>New Bill</span>
+                <span>New Book</span>
               </button>
               <button className="btn-nav-action-more" onClick={() => showToast('More Options')}>
                 <MoreVertical size={16} />
